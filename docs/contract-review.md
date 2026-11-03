@@ -2,8 +2,10 @@
 
 Estado: pendiente de acuerdo con el equipo móvil; no cierra #4.
 El archivo openapi-v1.json se genera desde FastAPI con contract_app().
-Es una aplicación de esquema separada: el servidor todavía solo sirve /health.
-No se simulan recepción ni persistencia con respuestas 201.
+La propuesta se mantiene separada para detectar cambios del contrato. Desde #1,
+la ruta real usa esos modelos y metadatos y una prueba compara su OpenAPI.
+No se simula persistencia con respuestas 201. #1 añade 503 genérico por fallos
+de infraestructura/detector; el snapshot refleja esta ampliación explícita.
 
 Revisión estática realizada el 2 de noviembre de 2026 (Lima): main de
 smishing-mobile-app e69abbc15eaea2659bc1d9de6d269b000344d55f, README,

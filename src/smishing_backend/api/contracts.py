@@ -1,6 +1,6 @@
 """Proposed v1 wire contract. No persistence or inference is implemented here."""
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -55,7 +55,7 @@ ERRORS = {
 def contract_app() -> FastAPI:
     """Schema-only app: never mounted or used to acknowledge contributions."""
     proposal = FastAPI(title="Smishing Backend", version="1.0.0")
-    responses = {
+    responses: dict[int | str, dict[str, Any]] = {
         status: {
             "model": ErrorResponse,
             "description": message,
