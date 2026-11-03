@@ -76,3 +76,5 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 Antes de recepción pública faltan el acuerdo móvil, decisiones operativas de
 credenciales y revisión de respaldos/retención en la infraestructura elegida.
 No se ha hecho despliegue ni se garantiza anonimización perfecta.
+
+[Ramas, commits, PRs, resultados y pendientes de la sesión Cloud](docs/development-status.md).

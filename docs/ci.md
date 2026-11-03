@@ -19,7 +19,9 @@ no garantiza que GitHub impida la unión. No se modifica main ni sus reglas aqu�
 Prueba negativa real: [Actions 41556539745](https://github.com/smishing-thesis/smishing-backend/actions/runs/41556539745),
 commit 4ace4ca: falló el snapshot por versión alterada intencionalmente después
 de pasar instalación, Ruff, formato y mypy. Se restaura el contrato en el
-siguiente commit; la ejecución verde se registrará al terminar.
+siguiente commit. Ejecución positiva real: [Actions 41556699405](https://github.com/smishing-thesis/smishing-backend/actions/runs/41556699405),
+commit 0c9c619, completada con success: 106 pruebas, tipos, formato, snapshot y
+migraciones verificadas. El cambio posterior solo documenta esta evidencia.
 
 Lectura de branch protection: 403 Resource not accessible by integration.
 No se puede verificar ni afirmar que backend-verify sea obligatorio.
