@@ -38,7 +38,13 @@ def test_duplicates_do_not_disclose_status(pg, text, status):
     ) as client:
         assert client.post("/api/v1/contributions", json=PAYLOAD).status_code == 201
         with pg.begin() as conn:
-            conn.execute(update(contributions).values(status=status))
+            conn.execute(
+                update(contributions).values(
+                    status=status,
+                    reviewed_at=func.now() if status != "pending" else None,
+                    review_reason="quality_checked" if status != "pending" else None,
+                )
+            )
         response = client.post("/api/v1/contributions", json={**PAYLOAD, "text": text})
         assert response.status_code == 409
         assert response.json() == {
