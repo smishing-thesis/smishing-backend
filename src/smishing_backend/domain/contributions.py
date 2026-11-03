@@ -6,6 +6,10 @@ from typing import Literal, Protocol
 from uuid import UUID
 
 
+class DuplicateContribution(Exception):
+    """Content already exists, without revealing review status."""
+
+
 @dataclass(frozen=True)
 class Label:
     value: Literal["safe", "smishing"]
