@@ -12,6 +12,7 @@ from smishing_backend.api.contracts import (
     ContributionInput,
 )
 from smishing_backend.domain.text import normalize_text
+from smishing_backend.logging import audit
 
 
 def fail(status: int) -> HTTPException:
@@ -73,6 +74,7 @@ async def contribution_error_handler(request: Request, exc: HTTPException):
     from fastapi.responses import JSONResponse
 
     if exc.status_code in ERRORS:
+        audit.info("contribution_rejected")
         code, message = ERRORS[exc.status_code]
         return JSONResponse(
             {"error": {"code": code, "message": message}},
