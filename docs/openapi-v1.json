@@ -1,0 +1,240 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Smishing Backend",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/contributions": {
+      "post": {
+        "summary": "Contribute",
+        "description": "Aporte optativo ya anonimizado. Inferencia exclusivamente local en Android. Máximo 16384 bytes de cuerpo JSON UTF-8; texto de 1 a 2048 puntos Unicode tras normalización.",
+        "operationId": "contribute_api_v1_contributions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Se requiere JSON UTF-8 válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "invalid_request",
+                    "message": "Se requiere JSON UTF-8 válido."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente o inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "unauthorized",
+                    "message": "Credencial ausente o inválida."
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El aporte ya existe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "duplicate_contribution",
+                    "message": "El aporte ya existe."
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "El cuerpo supera el límite permitido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "body_too_large",
+                    "message": "El cuerpo supera el límite permitido."
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El aporte no cumple el contrato.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "invalid_contribution",
+                    "message": "El aporte no cumple el contrato."
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite temporal de aportes excedido.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1.0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "message": "Límite temporal de aportes excedido."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ContributionCreated": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "const": "pending",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "ContributionCreated"
+      },
+      "ContributionInput": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "label": {
+            "type": "string",
+            "enum": [
+              "safe",
+              "smishing"
+            ],
+            "title": "Label"
+          },
+          "model_version": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?$",
+            "title": "Model Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "label",
+          "model_version"
+        ],
+        "title": "ContributionInput"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}
