@@ -42,6 +42,7 @@ class ErrorResponse(BaseModel):
 
 
 ERRORS = {
+    503: ("service_unavailable", "Servicio no disponible."),
     400: ("invalid_request", "Se requiere JSON UTF-8 válido."),
     401: ("unauthorized", "Credencial ausente o inválida."),
     409: ("duplicate_contribution", "El aporte ya existe."),
