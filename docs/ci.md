@@ -16,4 +16,11 @@ dependencias sin stubs se permiten. No se afirma tipado estricto de esas librer�
 Para bloquear merges, un administrador debe exigir backend-verify en el ruleset
 o protección de main después de integrar el workflow. Un check rojo por sí solo
 no garantiza que GitHub impida la unión. No se modifica main ni sus reglas aquí.
-Se documentarán enlaces de una ejecución fallida controlada y una verde reales.
+Prueba negativa real: [Actions 41556539745](https://github.com/smishing-thesis/smishing-backend/actions/runs/41556539745),
+commit 4ace4ca: falló el snapshot por versión alterada intencionalmente después
+de pasar instalación, Ruff, formato y mypy. Se restaura el contrato en el
+siguiente commit; la ejecución verde se registrará al terminar.
+
+Lectura de branch protection: 403 Resource not accessible by integration.
+No se puede verificar ni afirmar que backend-verify sea obligatorio.
+Project: 404 desde el entorno; las historias completas sí se recuperaron por API.

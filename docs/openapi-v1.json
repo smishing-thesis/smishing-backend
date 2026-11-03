@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Smishing Backend",
-    "version": "intentional-ci-negative-test"
+    "version": "1.0.0"
   },
   "paths": {
     "/api/v1/contributions": {
