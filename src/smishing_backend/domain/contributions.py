@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
+from smishing_backend.domain.privacy import assert_anonymized
+
 
 class DuplicateContribution(Exception):
     """Content already exists, without revealing review status."""
@@ -39,4 +41,5 @@ def receive_contribution(
 ) -> SavedContribution:
     if not contribution.labels:
         raise ValueError("A contribution must have at least one label")
+    assert_anonymized(contribution.text)
     return repository.save(contribution)

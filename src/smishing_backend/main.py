@@ -17,6 +17,7 @@ from smishing_backend.data.repositories.contributions import (
     PostgresContributionRepository,
 )
 from smishing_backend.domain.contributions import ContributionRepository
+from smishing_backend.domain.privacy import AnonymizationUnavailable, load_name_detector
 
 
 def create_app(
@@ -26,6 +27,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        load_name_detector()
         engine = None
         if repository is None:
             engine = create_database_engine(configured.database_url)
@@ -48,6 +50,7 @@ def create_app(
     app.include_router(contribution_router)
     app.add_exception_handler(HTTPException, contribution_error_handler)
 
+    @app.exception_handler(AnonymizationUnavailable)
     @app.exception_handler(SQLAlchemyError)
     async def storage_error(request: Request, exc: SQLAlchemyError):
         return JSONResponse(

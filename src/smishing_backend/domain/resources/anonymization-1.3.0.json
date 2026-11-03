@@ -1,0 +1,62 @@
+{
+  "rules_version": "1.3.0",
+  "text_rules": [
+    {
+      "name": "url",
+      "kind": "regex",
+      "placeholder": "<URL>",
+      "priority": 2,
+      "pattern": "https?://\\S+|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}(?:/\\S*)?",
+      "description": "Web links. Keeps the signal that a link existed without keeping its destination."
+    },
+    {
+      "name": "email",
+      "kind": "regex",
+      "placeholder": "<EMAIL_ADDRESS>",
+      "priority": 3,
+      "pattern": "[\\w.+-]+@[\\w-]+\\.[\\w.-]+",
+      "description": "Email addresses."
+    },
+    {
+      "name": "phone_pe",
+      "kind": "regex",
+      "placeholder": "<PHONE_NUMBER>",
+      "priority": 2,
+      "pattern": "(?:\\+?51[\\s.-]?)?9\\d{2}[\\s.-]?\\d{3}[\\s.-]?\\d{3}\\b",
+      "description": "Peruvian mobile phone numbers (9XXXXXXXX, optionally with +51)."
+    },
+    {
+      "name": "id_number_pe",
+      "kind": "regex",
+      "placeholder": "<ID_NUMBER>",
+      "priority": 3,
+      "pattern": "\\b(?:ruc|dni)\\b\\W{0,3}(?:n(?:ro|°|º|\\.)?\\W{0,3})?(?P<value>\\d{11}|\\d{8})\\b",
+      "description": "Peruvian RUC (11 digits) or DNI (8 digits) numbers written right after the keyword RUC/DNI. Only the capture group \"value\" is replaced, not the keyword. A natural-person RUC (starts with 10) embeds the DNI, so it identifies someone."
+    },
+    {
+      "name": "person_name",
+      "kind": "ner",
+      "placeholder": "<NAMED_ENTITY>",
+      "priority": 1,
+      "pattern": null,
+      "description": "Person names, detected via spaCy es_core_news_lg NER (PER entities)."
+    },
+    {
+      "name": "known_names",
+      "kind": "wordlist",
+      "placeholder": "<NAMED_ENTITY>",
+      "priority": 3,
+      "pattern": null,
+      "description": "Names/surnames from a local, never-committed list (e.g. the chat owners). Whole-word, case- and accent-insensitive; consecutive names merge into one span."
+    }
+  ],
+  "sender_categories": [
+    "short_code",
+    "alphanumeric",
+    "full_number",
+    "unknown"
+  ],
+  "source_commit": "6f44563b9bdb791f00a616c9850a19e494f84e81",
+  "source_repository": "https://github.com/smishing-thesis/sms-anonymizer",
+  "source_rules_sha256": "09a7f2b3812d549d926f91bce7927e177a62acff7d141602432076155d1b0eb7"
+}
