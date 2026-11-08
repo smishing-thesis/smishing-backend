@@ -1,0 +1,42 @@
+name: Backend Project status
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review, converted_to_draft]
+
+# The workflow and script run from main. Never check out or execute PR code here.
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-project-status
+  cancel-in-progress: false
+
+jobs:
+  update_issue_status:
+    if: >-
+      ${{ vars.BACKEND_PROJECT_AUTOMATION_ENABLED == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check status rules before using the App token
+        run: python -m unittest discover -s tests -p 'test_project_status.py'
+      - uses: actions/create-github-app-token@v3
+        id: project-token
+        with:
+          client-id: ${{ vars.PROJECT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PROJECT_APP_PRIVATE_KEY }}
+          owner: smishing-thesis
+          repositories: smishing-backend
+      - name: Update only the matching backend issue
+        env:
+          GH_TOKEN: ${{ steps.project-token.outputs.token }}
+        run: python scripts/project_status.py
+
