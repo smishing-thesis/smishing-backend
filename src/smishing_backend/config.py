@@ -11,3 +11,4 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = Field(default=60, ge=1)
     api_key: SecretStr | None = None
     api_keys: list[SecretStr] = Field(default_factory=list)
+    global_rate_limit_per_minute: int = Field(default=600, ge=1)
