@@ -1,0 +1,30 @@
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Literal, Protocol
+from uuid import UUID
+
+from smishing_backend.domain.quarantine import Decision, Reason
+
+
+@dataclass(frozen=True)
+class ReviewDecision:
+    decision: Decision
+    reason: Reason
+    label: Literal["safe", "smishing"]
+
+
+@dataclass(frozen=True)
+class RegisteredReview:
+    id: UUID
+    contribution_id: UUID
+    reviewer_id: str
+    decision: Decision
+    reviewed_at: datetime
+    label: Literal["safe", "smishing"]
+
+
+class ReviewRepository(Protocol):
+    def pending(self, limit: int) -> list[dict]: ...
+    def decide(
+        self, contribution_id: UUID, reviewer_id: str, decision: ReviewDecision
+    ) -> RegisteredReview: ...
