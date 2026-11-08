@@ -10,6 +10,7 @@ permissions:
 
 concurrency:
   group: backend-project-status
+  queue: max
   cancel-in-progress: false
 
 jobs:
