@@ -1,6 +1,7 @@
 """Physical corpus tables. Domain modules do not import this metadata."""
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 metadata = sa.MetaData()
 model_versions = sa.Table(
@@ -8,6 +9,49 @@ model_versions = sa.Table(
     metadata,
     sa.Column("id", sa.Uuid(), primary_key=True),
     sa.Column("version", sa.String(64), nullable=False, unique=True),
+    sa.Column("trained_at", sa.DateTime(timezone=True)),
+    sa.Column("published_at", sa.DateTime(timezone=True)),
+    sa.Column("corpus_version", sa.String(128)),
+    sa.Column("dataset_sha256", sa.String(64)),
+    sa.Column("hyperparameters", JSONB()),
+    sa.Column("metrics", JSONB()),
+    sa.Column("release_tag", sa.String(64)),
+    sa.Column("release_url", sa.String(512)),
+    sa.Column("metadata_sha256", sa.String(64)),
+    sa.CheckConstraint(
+        "("
+        + " AND ".join(
+            f"{name} IS NULL"
+            for name in (
+                "trained_at",
+                "published_at",
+                "corpus_version",
+                "dataset_sha256",
+                "hyperparameters",
+                "metrics",
+                "release_tag",
+                "release_url",
+                "metadata_sha256",
+            )
+        )
+        + ") OR ("
+        + " AND ".join(
+            f"{name} IS NOT NULL"
+            for name in (
+                "trained_at",
+                "published_at",
+                "corpus_version",
+                "dataset_sha256",
+                "hyperparameters",
+                "metrics",
+                "release_tag",
+                "release_url",
+                "metadata_sha256",
+            )
+        )
+        + ")",
+        name="ck_model_catalog_complete",
+    ),
 )
 contributions = sa.Table(
     "contributions",
@@ -51,6 +95,17 @@ labels = sa.Table(
         "model_version_id", sa.Uuid(), sa.ForeignKey("model_versions.id"), nullable=True
     ),
     sa.Column("value", sa.String(16), nullable=False),
+    sa.Column("origin", sa.String(16), nullable=False, server_default="device"),
+    sa.Column(
+        "created_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.now(),
+    ),
+    sa.CheckConstraint(
+        "(origin = 'device' AND model_version_id IS NOT NULL) OR (origin = 'manual' AND model_version_id IS NULL)",
+        name="ck_label_provenance",
+    ),
     sa.CheckConstraint("value IN ('safe', 'smishing')", name="ck_label_value"),
     sa.Index("ix_labels_contribution_id", "contribution_id"),
 )

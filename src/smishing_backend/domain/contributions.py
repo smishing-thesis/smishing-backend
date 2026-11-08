@@ -16,6 +16,14 @@ class DuplicateContribution(Exception):
 class Label:
     value: Literal["safe", "smishing"]
     model_version: str | None
+    origin: Literal["device", "manual"] = "device"
+
+
+class LabelRepository(Protocol):
+    def add_manual(
+        self, contribution_id: UUID, value: Literal["safe", "smishing"]
+    ) -> UUID: ...
+    def verified(self, contribution_id: UUID) -> list[dict]: ...
 
 
 @dataclass(frozen=True)
