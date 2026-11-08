@@ -10,3 +10,4 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://localhost/smishing"
     rate_limit_per_minute: int = Field(default=60, ge=1)
     api_key: SecretStr | None = None
+    api_keys: list[SecretStr] = Field(default_factory=list)
