@@ -21,7 +21,7 @@ El archivo `.env` queda excluido de Git.
 
 | Variable | Predeterminado | Uso |
 | --- | --- | --- |
-| `SMISHING_DATABASE_URL` | `sqlite:///./data/smishing.db` | Conexión futura |
+| `SMISHING_DATABASE_URL` | `postgresql+psycopg://localhost/smishing` | Conexión PostgreSQL |
 | `SMISHING_RATE_LIMIT_PER_MINUTE` | `60` | Límite futuro, entero positivo |
 | `SMISHING_API_KEY` | Sin valor | Clave futura, protegida en representaciones |
 
@@ -36,3 +36,5 @@ limitación ni autenticación. El endpoint de salud no requiere clave.
 - `data/repositories`: persistencia cuando se defina su contrato.
 
 No se incluyen mensajes reales ni datos personales.
+
+Migraciones y pruebas PostgreSQL: [docs/database.md](docs/database.md).
