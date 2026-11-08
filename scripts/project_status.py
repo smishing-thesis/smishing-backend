@@ -174,7 +174,7 @@ def main() -> int:
     matching = [
         item for item in items
         if (item.get("content") or {}).get("number") == change.issue_number
-        and item["content"].get("repository", {}).get("nameWithOwner") == REPOSITORY
+        and (item["content"].get("repository") or {}).get("nameWithOwner") == REPOSITORY
     ]
     if len(matching) != 1:
         print(f"Issue #{change.issue_number} has {len(matching)} Project cards; no change")
