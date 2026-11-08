@@ -6,11 +6,13 @@ que aún debe contrastarse para cerrar #4.
 
 ## Qué está integrado y qué está en revisión
 
-`main` en `03800d594c2c18a12ccc0c3c8395124afdf816d1` contiene la base FastAPI,
-PostgreSQL y repositorios de #3/#8/#9, además de la automatización del Project.
-En main solo está publicada por código la ruta de salud; no existe despliegue.
+La base #3/#8/#9 se verificó e integró en `03800d5`. El lote posterior añade
+a main la API pública de aportes, validación, autenticación, cuotas, duplicados,
+verificación residual, cuarentena, logs privados y el workflow CI. No existe
+despliegue. El modelo original de base de datos y la configuración operativa
+pendiente no se dan por verificados por integrar ese código.
 
-La API de aportes y sus protecciones están implementadas en PR apilados. La
+Las funciones internas posteriores están implementadas en PR apilados. La
 versión funcional completa contrastada es
 [`1dc7862`](https://github.com/smishing-thesis/smishing-backend/tree/1dc7862af984f5dd9de2307ff2bf49073f36255b),
 con 154 pruebas y CI verde. #15/#13/#16 tienen PR #38/#39/#40 listos para revisar;
@@ -46,12 +48,12 @@ flowchart LR
 ## Modelo de datos y privacidad
 
 El esquema completo de la versión funcional se reconstruye con migraciones
-0001–0005; main actualmente tiene 0001. No aplicar versiones posteriores desde
+0001–0005; el lote de API lleva main hasta 0002. No aplicar versiones posteriores desde
 una rama que no contiene su implementación.
 
 | Tabla | Contenido y relaciones | Disponibilidad |
 | --- | --- | --- |
-| contributions | UUID del aporte, texto anonimizado, hash único, fecha de recepción del servidor y estado | Main, 0001; fecha/motivo de revisión en 0002 |
+| contributions | UUID del aporte, texto anonimizado, hash único, fecha de recepción del servidor y estado | Main, 0001–0002 |
 | labels | Etiqueta y referencia opcional al modelo; FK al aporte | Main, 0001; origen y fecha en 0003 |
 | model_versions | Referencia de versión; metadatos agregados importados de una publicación | Referencia en main; catálogo completo en 0003 |
 | reviews | Revisor interno, decisión, motivo, fecha y etiqueta manual del mismo aporte | PR #39, 0004 |
@@ -133,7 +135,8 @@ Aplicar migraciones de la rama elegida antes de servir tráfico; downgrade destr
 información y se ensaya solo en base aislada. Los runners funcionales exigen TLS,
 desactivan access logs y proxy headers, y escuchan en loopback por defecto:
 `python -m smishing_backend.server` (8443) y `python -m smishing_backend.review_server`
-(8444). Estos módulos aún no están integrados en main.
+(8444). El runner público queda en main con el lote de API; el runner de revisión
+continúa en PR.
 
 Política inicial recomendada para #17, delegada por el usuario:
 

@@ -28,7 +28,7 @@ class NewContribution:
 @dataclass(frozen=True)
 class SavedContribution:
     id: UUID
-    status: Literal["pending", "accepted", "rejected"]
+    status: Literal["pending"]
     received_at: datetime
 
 

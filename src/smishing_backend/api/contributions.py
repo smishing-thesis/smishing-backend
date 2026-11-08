@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.routing import APIRoute
 
 from smishing_backend.api.contracts import (
     ContributionCreated,
@@ -23,7 +24,9 @@ router = APIRouter()
 proposal = contract_app()
 operation = proposal.openapi()["paths"]["/api/v1/contributions"]["post"]
 contract_route = next(
-    route for route in proposal.routes if route.path == "/api/v1/contributions"
+    route
+    for route in proposal.routes
+    if isinstance(route, APIRoute) and route.path == "/api/v1/contributions"
 )
 
 

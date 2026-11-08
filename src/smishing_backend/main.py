@@ -21,6 +21,15 @@ from smishing_backend.domain.privacy import AnonymizationUnavailable, load_name_
 from smishing_backend.logging import audit
 
 
+class CorpusFastAPI(FastAPI):
+    def openapi(self):
+        schema = super().openapi()
+        proposal = contract_app().openapi()
+        for key, value in proposal["components"].items():
+            schema.setdefault("components", {}).setdefault(key, {}).update(value)
+        return schema
+
+
 def create_app(
     settings: Settings | None = None, repository: ContributionRepository | None = None
 ) -> FastAPI:
@@ -45,7 +54,7 @@ def create_app(
             if engine is not None:
                 engine.dispose()
 
-    app = FastAPI(title="Smishing Backend", version="1.0.0", lifespan=lifespan)
+    app = CorpusFastAPI(title="Smishing Backend", version="1.0.0", lifespan=lifespan)
     app.state.settings = configured
     app.include_router(health_router)
     app.include_router(contribution_router)
@@ -65,18 +74,6 @@ def create_app(
             status_code=503,
         )
 
-    generated_openapi = app.openapi
-
-    def openapi():
-        if app.openapi_schema is None:
-            schema = generated_openapi()
-            proposal = contract_app().openapi()
-            for key, value in proposal["components"].items():
-                schema.setdefault("components", {}).setdefault(key, {}).update(value)
-            app.openapi_schema = schema
-        return app.openapi_schema
-
-    app.openapi = openapi
     return app
 
 

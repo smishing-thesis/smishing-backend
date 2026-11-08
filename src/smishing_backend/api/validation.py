@@ -36,7 +36,7 @@ async def validate_contribution(request: Request) -> ContributionInput:
     media["content-type"] = request.headers["content-type"]
     if media.get_content_type().lower() != "application/json":
         raise fail(400)
-    params = media.get_params()[1:]
+    params = (media.get_params() or [])[1:]
     if any(k.lower() != "charset" or v.lower() != "utf-8" for k, v in params):
         raise fail(400)
     if (
@@ -70,9 +70,10 @@ async def validate_contribution(request: Request) -> ContributionInput:
         raise fail(422) from None
 
 
-async def contribution_error_handler(request: Request, exc: HTTPException):
+async def contribution_error_handler(request: Request, exc: Exception):
     from fastapi.responses import JSONResponse
 
+    assert isinstance(exc, HTTPException)
     if exc.status_code in ERRORS:
         audit.info("contribution_rejected")
         code, message = ERRORS[exc.status_code]

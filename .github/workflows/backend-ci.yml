@@ -1,0 +1,62 @@
+name: Backend CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: backend-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: smishing_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SMISHING_DATABASE_URL: postgresql+psycopg://postgres:synthetic-ci-only@localhost:5432/smishing_test
+      SMISHING_TEST_DATABASE_URL: postgresql+psycopg://postgres:synthetic-ci-only@localhost:5432/smishing_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.23"
+          enable-cache: true
+      - name: Install locked dependencies
+        run: uv sync --locked --group dev
+      - name: Lint
+        run: uv run --locked ruff check src tests migrations
+      - name: Format
+        run: uv run --locked ruff format --check src tests migrations
+      - name: Types
+        run: uv run --locked mypy
+      - name: OpenAPI contract snapshot
+        run: uv run --locked pytest tests/test_contract.py -q
+      - name: PostgreSQL and HTTPS tests
+        run: uv run --locked pytest -q
+      - name: Migration round trip and metadata drift
+        run: |
+          uv run --locked alembic upgrade head
+          uv run --locked alembic check
+          uv run --locked alembic downgrade base
+          uv run --locked alembic upgrade head
