@@ -4,9 +4,14 @@ from uuid import uuid4
 
 from sqlalchemy import Engine, insert, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 
 from smishing_backend.data.schema import contributions, labels, model_versions
-from smishing_backend.domain.contributions import NewContribution, SavedContribution
+from smishing_backend.domain.contributions import (
+    DuplicateContribution,
+    NewContribution,
+    SavedContribution,
+)
 
 
 class PostgresContributionRepository:
@@ -14,6 +19,18 @@ class PostgresContributionRepository:
         self.engine = engine
 
     def save(self, contribution: NewContribution) -> SavedContribution:
+        try:
+            return self._save(contribution)
+        except IntegrityError as exc:
+            diagnostic = getattr(exc.orig, "diag", None)
+            if (
+                getattr(diagnostic, "constraint_name", None)
+                == "uq_contributions_content_hash"
+            ):
+                raise DuplicateContribution() from None
+            raise
+
+    def _save(self, contribution: NewContribution) -> SavedContribution:
         # begin commits only after all labels succeed; any failure rolls back all rows.
         with self.engine.begin() as connection:
             row = connection.execute(

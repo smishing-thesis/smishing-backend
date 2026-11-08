@@ -10,6 +10,7 @@ from smishing_backend.api.contracts import (
 from smishing_backend.api.rate_limit import limited_contribution
 from smishing_backend.api.validation import fail
 from smishing_backend.domain.contributions import (
+    DuplicateContribution,
     Label,
     NewContribution,
     receive_contribution,
@@ -39,12 +40,15 @@ def contribute(
 ) -> ContributionCreated:
     if request.url.scheme != "https":
         raise fail(400)
-    saved = receive_contribution(
-        NewContribution(
-            payload.text,
-            content_hash(payload.text),
-            (Label(payload.label, payload.model_version),),
-        ),
-        request.app.state.repository,
-    )
+    try:
+        saved = receive_contribution(
+            NewContribution(
+                payload.text,
+                content_hash(payload.text),
+                (Label(payload.label, payload.model_version),),
+            ),
+            request.app.state.repository,
+        )
+    except DuplicateContribution:
+        raise fail(409) from None
     return ContributionCreated(id=saved.id, status=saved.status)
