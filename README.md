@@ -76,6 +76,7 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 - [Logs y respaldos](docs/privacy-operations.md) y [CI](docs/ci.md).
 - [Origen de etiquetas y catálogo del modelo (#15)](docs/label-provenance.md).
 - [Revisión interna protegida (#13)](docs/protected-review.md).
+- [Exportación reproducible para el modelo (#16)](docs/corpus-export.md).
 
 Antes de recepción pública faltan el acuerdo móvil, decisiones operativas de
 credenciales y revisión de respaldos/retención en la infraestructura elegida.

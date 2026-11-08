@@ -1,0 +1,23 @@
+{
+  "synthetic_only": true,
+  "transport": "two actual Uvicorn HTTPS listeners; certificate verified",
+  "database": "PostgreSQL 17, isolated temporary schema",
+  "unauthorized_review_statuses": [
+    401,
+    401,
+    401
+  ],
+  "pending_after_review": 1,
+  "exported_rows": 2,
+  "byte_reproducible": true,
+  "unmodified_model_reader": true,
+  "public_contract_excludes_review": true,
+  "manual_label_corrected": true,
+  "no_training_run": true,
+  "persisted_counts": {
+    "contributions": 4,
+    "labels": 7,
+    "reviews": 3
+  },
+  "migration_round_trip_and_no_drift": true
+}
