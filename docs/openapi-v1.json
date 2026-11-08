@@ -31,6 +31,22 @@
               }
             }
           },
+          "503": {
+            "description": "Servicio no disponible.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "service_unavailable",
+                    "message": "Servicio no disponible."
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Se requiere JSON UTF-8 válido.",
             "content": {

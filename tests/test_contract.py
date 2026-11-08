@@ -18,4 +18,5 @@ def test_proposed_contract_snapshot():
         "413",
         "422",
         "429",
+        "503",
     }
