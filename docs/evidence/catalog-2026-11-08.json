@@ -1,0 +1,9 @@
+{
+  "release": "v1.0.0",
+  "repository": "smishing-thesis/charcnn-smishing-model",
+  "real_release_metadata_imported": true,
+  "repeat_registration_same_row": true,
+  "catalog_rows": 1,
+  "schema_no_drift": true,
+  "no_corpus_or_model_download": true
+}
