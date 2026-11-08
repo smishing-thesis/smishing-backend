@@ -22,6 +22,12 @@ contributions = sa.Table(
     ),
     sa.Column("content_hash", sa.String(64), nullable=False),
     sa.Column("status", sa.String(16), nullable=False, server_default="pending"),
+    sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True),
+    sa.Column("review_reason", sa.String(32), nullable=True),
+    sa.CheckConstraint(
+        "(status = 'pending' AND reviewed_at IS NULL AND review_reason IS NULL) OR (status IN ('accepted', 'rejected') AND reviewed_at IS NOT NULL AND review_reason IS NOT NULL AND review_reason IN ('quality_checked', 'invalid_content', 'out_of_scope'))",
+        name="ck_registered_review",
+    ),
     sa.CheckConstraint(
         "status IN ('pending', 'accepted', 'rejected')", name="ck_contribution_status"
     ),
