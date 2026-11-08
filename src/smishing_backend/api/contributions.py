@@ -17,6 +17,7 @@ from smishing_backend.domain.contributions import (
 )
 from smishing_backend.domain.privacy import ResidualPersonalData
 from smishing_backend.domain.text import content_hash
+from smishing_backend.logging import audit
 
 router = APIRouter()
 proposal = contract_app()
@@ -54,4 +55,5 @@ def contribute(
         raise fail(409) from None
     except ResidualPersonalData:
         raise fail(422) from None
+    audit.info("contribution_accepted")
     return ContributionCreated(id=saved.id, status=saved.status)

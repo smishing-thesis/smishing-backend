@@ -18,6 +18,7 @@ from smishing_backend.data.repositories.contributions import (
 )
 from smishing_backend.domain.contributions import ContributionRepository
 from smishing_backend.domain.privacy import AnonymizationUnavailable, load_name_detector
+from smishing_backend.logging import audit
 
 
 def create_app(
@@ -53,6 +54,7 @@ def create_app(
     @app.exception_handler(AnonymizationUnavailable)
     @app.exception_handler(SQLAlchemyError)
     async def storage_error(request: Request, exc: SQLAlchemyError):
+        audit.info("service_unavailable")
         return JSONResponse(
             {
                 "error": {
