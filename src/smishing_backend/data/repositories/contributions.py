@@ -69,6 +69,7 @@ class PostgresContributionRepository:
                         contribution_id=row.id,
                         model_version_id=model_id,
                         value=label.value,
+                        origin=label.origin,
                     )
                 )
         return SavedContribution(row.id, row.status, row.received_at)

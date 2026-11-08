@@ -30,7 +30,7 @@ def count(conn, table):
 def test_atomic_save_and_reuse_version(pg):
     repo = PostgresContributionRepository(pg)
     first = receive_contribution(
-        sample(values=(Label("safe", "1.0.0"), Label("smishing", None))), repo
+        sample(values=(Label("safe", "1.0.0"), Label("smishing", None, "manual"))), repo
     )
     second = receive_contribution(sample("b" * 64), repo)
     assert first.id != second.id

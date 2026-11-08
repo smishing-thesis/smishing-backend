@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import Engine, func, select, update
+from sqlalchemy import Engine, case, func, select, update
 
 from smishing_backend.data.schema import contributions, labels, model_versions
 from smishing_backend.domain.quarantine import Decision, InvalidTransition, Reason
@@ -25,18 +25,34 @@ class PostgresQuarantineRepository:
                 raise InvalidTransition()
 
     def accepted_for_training(self) -> list[dict]:
+        ranked = select(
+            labels,
+            func.row_number()
+            .over(
+                partition_by=labels.c.contribution_id,
+                order_by=[
+                    case((labels.c.origin == "manual", 0), else_=1),
+                    labels.c.created_at.desc(),
+                    labels.c.id.desc(),
+                ],
+            )
+            .label("preference"),
+        ).subquery()
         statement = (
             select(
                 contributions.c.id,
                 contributions.c.text,
-                labels.c.value.label("label"),
+                ranked.c.value.label("label"),
+                ranked.c.origin.label("label_origin"),
                 model_versions.c.version.label("model_version"),
             )
             .select_from(
                 contributions.join(
-                    labels, labels.c.contribution_id == contributions.c.id
+                    ranked,
+                    (ranked.c.contribution_id == contributions.c.id)
+                    & (ranked.c.preference == 1),
                 ).outerjoin(
-                    model_versions, labels.c.model_version_id == model_versions.c.id
+                    model_versions, ranked.c.model_version_id == model_versions.c.id
                 )
             )
             .where(contributions.c.status == "accepted")

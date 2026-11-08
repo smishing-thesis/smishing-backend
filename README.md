@@ -74,6 +74,7 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 - [Autenticación](docs/authentication.md), [cuotas](docs/rate-limit.md) y [API](docs/contribution-api.md).
 - [Duplicados](docs/deduplication.md), [anonimización y límites](docs/anonymization.md) y [cuarentena](docs/quarantine.md).
 - [Logs y respaldos](docs/privacy-operations.md) y [CI](docs/ci.md).
+- [Origen de etiquetas y catálogo del modelo (#15)](docs/label-provenance.md).
 
 Antes de recepción pública faltan el acuerdo móvil, decisiones operativas de
 credenciales y revisión de respaldos/retención en la infraestructura elegida.
