@@ -15,6 +15,7 @@ from smishing_backend.domain.contributions import (
     NewContribution,
     receive_contribution,
 )
+from smishing_backend.domain.privacy import ResidualPersonalData
 from smishing_backend.domain.text import content_hash
 
 router = APIRouter()
@@ -51,4 +52,6 @@ def contribute(
         )
     except DuplicateContribution:
         raise fail(409) from None
+    except ResidualPersonalData:
+        raise fail(422) from None
     return ContributionCreated(id=saved.id, status=saved.status)
