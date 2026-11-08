@@ -154,6 +154,10 @@ controlada, pero falta exigir su check en protección de main; un test verde no
 bloquea merges por sí solo. Azure/red privada/secretos/TLS/CORS de despliegue son
 #19/#20 y no se han configurado ni desplegado en esta sesión.
 
+Actualización de evidencia: se completó un [simulacro local cifrado de respaldo
+y restauración](backup-policy.md) con datos sintéticos y el esquema funcional
+0005. No equivale a programación, retención o recuperación de producción.
+
 ## Revisión del documento contra el código
 
 Se contrastaron las siguientes piezas del commit funcional fijado arriba:
