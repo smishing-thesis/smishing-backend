@@ -2,7 +2,8 @@
 
 API optativa de aportes SMS ya anonimizados, Python 3.12 y FastAPI. La inferencia
 Char-CNN/LiteRT permanece en Android; este servicio no clasifica mensajes.
-Las ramas de trabajo están en revisión: ningún PR se ha integrado en main.
+La base #3/#8/#9 ya está integrada en main. Las funciones posteriores siguen
+en PR de revisión; consulta el [estado por hitos](docs/milestones-2026-11-08.md).
 
 ## Desarrollo y verificación
 
@@ -75,6 +76,7 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 - [Origen de etiquetas y catálogo del modelo (#15)](docs/label-provenance.md).
 - [Revisión interna protegida (#13)](docs/protected-review.md).
 - [Exportación reproducible para el modelo (#16)](docs/corpus-export.md).
+- [Señales de posible envenenamiento (#14)](docs/poisoning-signals.md).
 
 Antes de recepción pública faltan el acuerdo móvil, decisiones operativas de
 credenciales y revisión de respaldos/retención en la infraestructura elegida.

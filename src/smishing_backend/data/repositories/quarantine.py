@@ -1,8 +1,13 @@
 from uuid import UUID
 
-from sqlalchemy import Engine, case, func, select, update
+from sqlalchemy import Engine, case, exists, func, select, update
 
-from smishing_backend.data.schema import contributions, labels, model_versions
+from smishing_backend.data.schema import (
+    contributions,
+    labels,
+    model_versions,
+    risk_flags,
+)
 from smishing_backend.domain.quarantine import Decision, InvalidTransition, Reason
 
 
@@ -56,6 +61,14 @@ class PostgresQuarantineRepository:
                 )
             )
             .where(contributions.c.status == "accepted")
+            .where(
+                ~exists(
+                    select(risk_flags.c.id).where(
+                        risk_flags.c.contribution_id == contributions.c.id,
+                        risk_flags.c.reviewed_at.is_(None),
+                    )
+                )
+            )
         )
         with self.engine.connect() as connection:
             return [dict(row) for row in connection.execute(statement).mappings()]

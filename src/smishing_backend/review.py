@@ -30,6 +30,12 @@ class ReviewInput(BaseModel):
     decision: Literal["accepted", "rejected"]
     reason: Literal["quality_checked", "invalid_content", "out_of_scope"]
     label: Literal["safe", "smishing"]
+    acknowledge_flags: bool = False
+
+
+class FlagAcknowledgement(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    confirm: Literal[True]
 
 
 class PendingContribution(BaseModel):
@@ -91,11 +97,28 @@ def create_review_app(
         dependencies=[Depends(bearer)],
     )
     def decide(contribution_id: UUID, payload: ReviewInput, request: Request):
-        decision = ReviewDecision(payload.decision, payload.reason, payload.label)
+        decision = ReviewDecision(
+            payload.decision, payload.reason, payload.label, payload.acknowledge_flags
+        )
         result = request.app.state.repository.decide(
             contribution_id, request.state.reviewer_id, decision
         )
         return asdict(result)
+
+    @app.get("/reviews/flagged", dependencies=[Depends(bearer)])
+    def flagged(request: Request, limit: Annotated[int, Query(ge=1, le=100)] = 50):
+        return request.app.state.repository.flagged(limit)
+
+    @app.post(
+        "/reviews/{contribution_id}/flags/acknowledge", dependencies=[Depends(bearer)]
+    )
+    def acknowledge(
+        contribution_id: UUID, payload: FlagAcknowledgement, request: Request
+    ):
+        count = request.app.state.repository.acknowledge(
+            contribution_id, request.state.reviewer_id
+        )
+        return {"reviewed_flags": count}
 
     @app.exception_handler(RequestValidationError)
     async def invalid(request: Request, exc: RequestValidationError):

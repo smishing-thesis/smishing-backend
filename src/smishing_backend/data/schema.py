@@ -80,6 +80,7 @@ contributions = sa.Table(
     ),
     sa.CheckConstraint("content_hash ~ '^[0-9a-f]{64}$'", name="ck_contribution_hash"),
     sa.UniqueConstraint("content_hash", name="uq_contributions_content_hash"),
+    sa.Index("ix_contributions_received_at", "received_at"),
 )
 labels = sa.Table(
     "labels",
@@ -144,5 +145,42 @@ reviews = sa.Table(
     sa.CheckConstraint(
         "reason IN ('quality_checked', 'invalid_content', 'out_of_scope')",
         name="ck_review_reason",
+    ),
+)
+
+risk_flags = sa.Table(
+    "risk_flags",
+    metadata,
+    sa.Column("id", sa.Uuid(), primary_key=True),
+    sa.Column(
+        "contribution_id",
+        sa.Uuid(),
+        sa.ForeignKey("contributions.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    sa.Column("code", sa.String(32), nullable=False),
+    sa.Column(
+        "raised_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.now(),
+    ),
+    sa.Column("reviewed_at", sa.DateTime(timezone=True)),
+    sa.Column("reviewer_id", sa.String(64)),
+    sa.Column("review_decision", sa.String(16)),
+    sa.CheckConstraint(
+        "code IN ('similarity_burst', 'label_conflict', 'class_shift', 'evaluation_similarity')",
+        name="ck_risk_signal",
+    ),
+    sa.CheckConstraint(
+        "(reviewed_at IS NULL AND reviewer_id IS NULL AND review_decision IS NULL) OR (reviewed_at IS NOT NULL AND reviewer_id IS NOT NULL AND reviewer_id ~ '^[a-z0-9_-]{1,64}$' AND review_decision IS NOT NULL AND review_decision IN ('accepted', 'rejected', 'cleared'))",
+        name="ck_risk_review",
+    ),
+    sa.Index(
+        "uq_unresolved_risk",
+        "contribution_id",
+        "code",
+        unique=True,
+        postgresql_where=sa.text("reviewed_at IS NULL"),
     ),
 )

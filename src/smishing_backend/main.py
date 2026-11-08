@@ -13,9 +13,8 @@ from smishing_backend.api.rate_limit import RateLimiter
 from smishing_backend.api.validation import contribution_error_handler
 from smishing_backend.config import Settings
 from smishing_backend.data.connection import create_database_engine
-from smishing_backend.data.repositories.contributions import (
-    PostgresContributionRepository,
-)
+from smishing_backend.data.repositories.poisoning import RiskAwareContributionRepository
+from smishing_backend.data.risk_config import policy_from_settings
 from smishing_backend.domain.contributions import ContributionRepository
 from smishing_backend.domain.privacy import AnonymizationUnavailable, load_name_detector
 from smishing_backend.logging import audit
@@ -41,7 +40,9 @@ def create_app(
         engine = None
         if repository is None:
             engine = create_database_engine(configured.database_url)
-            app.state.repository = PostgresContributionRepository(engine)
+            app.state.repository = RiskAwareContributionRepository(
+                engine, policy_from_settings(configured)
+            )
         else:
             app.state.repository = repository
         app.state.rate_limiter = RateLimiter(
