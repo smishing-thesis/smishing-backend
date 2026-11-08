@@ -2,7 +2,9 @@
 
 API optativa de aportes SMS ya anonimizados, Python 3.12 y FastAPI. La inferencia
 Char-CNN/LiteRT permanece en Android; este servicio no clasifica mensajes.
-Las ramas de trabajo están en revisión: ningún PR se ha integrado en main.
+La base y el flujo de aportes se integran por historias verificadas. Consulta
+[arquitectura, privacidad y estado real](docs/architecture-privacy.md) para
+distinguir main de las funciones internas que siguen en PR.
 
 ## Desarrollo y verificación
 
