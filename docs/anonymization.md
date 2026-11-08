@@ -1,5 +1,8 @@
 # Verificación residual — #11
 
+La [ficha del corpus](corpus-card.md) registra la versión, procedencia y límites
+de estas reglas, sin incluir corpus real ni atribuir métricas no medidas.
+
 Reglas sms-anonymizer 1.3.0, commit 6f44563b9bdb791f00a616c9850a19e494f84e81.
 Se conserva una exportación de su especificación, con procedencia y SHA-256 del
 archivo fuente en domain/resources/anonymization-1.3.0.json. No incluye corpus,
