@@ -69,6 +69,19 @@ class ProjectStatusTests(unittest.TestCase):
                 self.assertEqual(project_status.main(), 0)
                 mutation.assert_not_called()
 
+    def test_closed_or_inaccessible_issue_does_not_mutate(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+            event_path = Path(directory) / "event.json"
+            event_path.write_text(json.dumps(event(draft=False)), encoding="utf-8")
+            for content in (
+                {"number": 6, "state": "CLOSED", "repository": {"nameWithOwner": "smishing-thesis/smishing-backend"}},
+                {"number": 6, "state": "OPEN", "repository": None},
+            ):
+                items = [{"id": "backend", "content": content, "fieldValueByName": {"name": "In progress"}}]
+                with self.subTest(content=content), patch.dict(os.environ, {"GITHUB_EVENT_NAME": "pull_request_target", "GITHUB_EVENT_PATH": str(event_path), "GH_TOKEN": "test"}), patch.object(project_status, "load_project", return_value=("project", "field", {"In review": "option"}, items)), patch.object(project_status, "graphql") as mutation:
+                    self.assertEqual(project_status.main(), 0)
+                    mutation.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
