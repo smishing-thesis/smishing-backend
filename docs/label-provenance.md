@@ -68,7 +68,7 @@ uv run --locked mypy
 uv run --locked pytest -q
 ```
 
-Resultado: **123 pruebas pasaron**, sin omisiones; Ruff y tipos correctos.
+Resultado: **130 pruebas pasaron**, sin omisiones; Ruff y tipos correctos.
 Incluye coexistencia de etiquetas, restricciones de origen/versión, selección
 de manuales, preferencia para entrenamiento, migración con datos legados,
 registro concurrente/idempotente y rechazo de metadatos inconsistentes.
@@ -77,6 +77,7 @@ dos veces contra los assets reales publicados de v1.0.0, sin copiar SMS ni
 archivos de publicación al repositorio, sobre una base de prueba; ambos
 registros fueron correctos y `alembic check` no encontró diferencias.
 
-Esta rama depende de `feat/18-backend-ci`; su PR contiene solo #15. El código
-está listo para revisión, no integrado en main ni desplegado. No se da por
-terminada una historia pendiente de esa revisión únicamente por un test verde.
+Revalidado sobre main después de integrar #34: 130 pruebas y dos subtests,
+con importación real de v1.0.0 repetida sobre un esquema temporal nuevo.
+[Resultado de la importación](evidence/catalog-2026-11-08.json).
+El PR #38 tiene base main y contiene solo #15. No se ha desplegado.
