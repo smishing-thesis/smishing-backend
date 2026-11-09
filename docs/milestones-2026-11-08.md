@@ -27,8 +27,9 @@ Una marca requiere revisión, no constituye rechazo ni atribución de intención
 
 ## Pendientes que no se presentan como completados
 
-- #4: el Word ya fue contrastado; falta registrar acuerdo con el cliente Android
-  sobre el contrato actualizado y el registro previo de versiones.
+- #4 registra la revisión del Word y del resultado Android y adopta el contrato
+  bajo autorización del responsable. El cliente de envío y su prueba móvil son
+  trabajo de integración separado; no se presentan como implementados.
 - #17: PR #43 incorpora retención automática local, consola desactivada y revisión
   de respaldo 0006. El despliegue debe programar copias, custodiar claves y
   revisar logs externos; no equivale a infraestructura configurada.

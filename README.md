@@ -47,8 +47,8 @@ uv run --locked python -m smishing_backend.server
 
 `GET /health` devuelve `{"status":"ok"}`. `POST /api/v1/contributions` exige
 HTTPS y X-API-Key; valida y reexamina anonimización antes de guardar el aporte
-pendiente junto a su etiqueta. `/docs` presenta OpenAPI. El contrato móvil sigue
-pendiente de acuerdo: [revisión](docs/contract-review.md).
+pendiente junto a su etiqueta. `/docs` presenta OpenAPI. El contrato v1 y su revisión entre repositorios están
+registrados en [contrato y revisión](docs/contract-review.md).
 
 | Variable | Predeterminado | Uso |
 | --- | --- | --- |

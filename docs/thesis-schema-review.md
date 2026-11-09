@@ -75,8 +75,9 @@ certifica su calidad. Solo se importan metadatos agregados de la publicación.
 El contrato público conserva `text`, `label`, `model_version`; el límite de
 `model_version` pasa explícitamente de 64 a **20 caracteres** para coincidir con
 `version_tag`. El snapshot OpenAPI se actualiza y compara en pruebas. Este cambio
-necesita reflejarse en el cliente móvil; no se afirma una prueba Android ni un
-acuerdo de contrato realizado por terceros. #4 conserva ese punto pendiente.
+necesita reflejarse en el cliente móvil. #4 registra la revisión estática de sus
+datos y arquitectura y la adopción bajo autorización del responsable; no se
+afirma una prueba Android ni un acuerdo individual realizado por terceros.
 
 ## Actualización de una base existente
 
