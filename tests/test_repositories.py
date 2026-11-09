@@ -30,7 +30,7 @@ def count(conn, table):
 def test_atomic_save_and_reuse_version(pg):
     repo = PostgresContributionRepository(pg)
     first = receive_contribution(
-        sample(values=(Label("safe", "1.0.0"), Label("smishing", None))), repo
+        sample(values=(Label("safe", "1.0.0"), Label("smishing", None, "manual"))), repo
     )
     second = receive_contribution(sample("b" * 64), repo)
     assert first.id != second.id
@@ -51,11 +51,10 @@ def test_atomic_save_and_reuse_version(pg):
 def test_failure_in_second_label_rolls_back_everything(pg):
     repo = PostgresContributionRepository(pg)
     with pytest.raises(IntegrityError):
-        repo.save(sample(values=(Label("safe", "1.0.0"), Label("invalid", "2.0.0"))))
+        repo.save(sample(values=(Label("safe", "1.0.0"), Label("invalid", "1.0.0"))))
     with pg.connect() as conn:
-        assert all(
-            count(conn, table) == 0 for table in [contributions, labels, model_versions]
-        )
+        assert all(count(conn, table) == 0 for table in [contributions, labels])
+        assert count(conn, model_versions) == 1
 
 
 def test_shared_version_concurrently(pg):

@@ -1,0 +1,12 @@
+{
+  "synthetic_only": true,
+  "first_status": 201,
+  "over_limit_status": 429,
+  "retry_after_seconds": 60,
+  "rows_after_block": 1,
+  "status_after_window": 201,
+  "expired_counter_map_and_salt": true,
+  "sms_ip_key_absent_from_logs": true,
+  "database": "PostgreSQL 17 real, isolated temporary schema",
+  "separate_timer_expiration_test": "covered by full pytest suite"
+}

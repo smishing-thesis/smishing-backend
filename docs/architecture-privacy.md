@@ -1,20 +1,23 @@
 # Arquitectura, datos y operación del backend
 
 Fuente central del equipo, revisada contra código el **8 de noviembre de 2026**.
-Describe lo existente y sus límites; no sustituye el modelo original de la tesis,
-que aún debe contrastarse para cerrar #4.
+Describe lo existente y sus límites. La Figura 6 del Word proporcionado por el
+equipo se contrastó: [modelo físico y correcciones](thesis-schema-review.md).
+El acuerdo final del contrato Android sigue pendiente en #4.
 
 ## Qué está integrado y qué está en revisión
 
-`main` en `03800d594c2c18a12ccc0c3c8395124afdf816d1` contiene la base FastAPI,
-PostgreSQL y repositorios de #3/#8/#9, además de la automatización del Project.
-En main solo está publicada por código la ruta de salud; no existe despliegue.
+La base #3/#8/#9 se verificó e integró en `03800d5`. El lote posterior añade
+a main la API pública de aportes, validación, autenticación, cuotas, duplicados,
+verificación residual, cuarentena, logs privados y el workflow CI. No existe
+despliegue. El modelo original de base de datos y la configuración operativa
+pendiente no se dan por verificados por integrar ese código.
 
-La API de aportes y sus protecciones están implementadas en PR apilados. La
-versión funcional completa contrastada es
-[`1dc7862`](https://github.com/smishing-thesis/smishing-backend/tree/1dc7862af984f5dd9de2307ff2bf49073f36255b),
-con 154 pruebas y CI verde. #15/#13/#16 tienen PR #38/#39/#40 listos para revisar;
-#14 tiene el borrador #41. Describirlos aquí no significa que estén en main.
+Las funciones de catálogo/etiquetas (#15), revisión privada (#13) y exportación
+(#16) están integradas mediante PR #38/#39/#40 y probadas juntas con main.
+La corrección de #8 añade la migración 0005 para coincidir con la Figura 6.
+El PR #41 añade las señales de #14 a esta versión, con migración 0006 y
+revisión obligatoria antes de entrenar/exportar un aporte marcado.
 
 ## Responsabilidades
 
@@ -39,23 +42,23 @@ flowchart LR
     C --> D[Repositorios PostgreSQL]
     R[Operador con credencial de revisor] --> E[API interna separada]
     E --> D
-    D --> F[Comando de exportación de aceptados sin alertas pendientes]
+    D --> F[Comando de exportación de aceptados]
     F --> G[Archivo para el lector del pipeline del modelo]
 ```
 
 ## Modelo de datos y privacidad
 
-El esquema completo de la versión funcional se reconstruye con migraciones
-0001–0005; main actualmente tiene 0001. No aplicar versiones posteriores desde
-una rama que no contiene su implementación.
+El esquema se reconstruye con migraciones 0001–0006. La 0005 corresponde al
+modelo físico de la Memoria; la 0006 añade las señales de #14 por separado.
+No aplicar migraciones desde una rama que no contiene su implementación.
 
 | Tabla | Contenido y relaciones | Disponibilidad |
 | --- | --- | --- |
-| contributions | UUID del aporte, texto anonimizado, hash único, fecha de recepción del servidor y estado | Main, 0001; fecha/motivo de revisión en 0002 |
-| labels | Etiqueta y referencia opcional al modelo; FK al aporte | Main, 0001; origen y fecha en 0003 |
-| model_versions | Referencia de versión; metadatos agregados importados de una publicación | Referencia en main; catálogo completo en 0003 |
-| reviews | Revisor interno, decisión, motivo, fecha y etiqueta manual del mismo aporte | PR #39, 0004 |
-| risk_flags | Tipo de señal, aporte afectado y revisión posterior atribuida | Borrador #41, 0005 |
+| contributed_message | UUID del aporte, texto anonimizado, hash único, fecha de recepción del servidor y estado | Main, 0001–0002; nombres del Word en 0005 |
+| message_label | Etiqueta y referencia opcional al modelo; FK al aporte | Main; source y created_at; nombres del Word en 0005 |
+| model_version | Referencia de versión; metadatos agregados importados de una publicación | Catálogo completo obligatorio; tipos del Word en 0005 |
+| reviews | Revisor interno, decisión, motivo, fecha y etiqueta manual del mismo aporte | Main, 0004 |
+| risk_flags | Tipo de señal, aporte afectado y revisión posterior atribuida | 0006, PR #41 |
 | alembic_version | Versión técnica del esquema | Main |
 
 En 0003, una etiqueta de origen `device` exige modelo y una `manual` lo prohíbe.
@@ -92,7 +95,7 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
 7. En la versión de #14 analiza señales de calidad antes de guardar. Un hash ya
    existente da 409, sin revelar estado/ID; una contradicción puede marcar solo
    el registro existente, sin guardar el cuerpo del envío duplicado.
-8. Guarda aporte, etiquetas y marcas en una transacción. Nace `pending`, nunca
+8. Guarda aporte y etiquetas en una transacción; las marcas son de #14. Nace `pending`, nunca
    directamente aceptado. Un fallo revierte las escrituras; error genérico 503.
 9. El revisor entra a **otra aplicación**, con Bearer distinto de la API key.
    Lista pendientes, acepta/rechaza y elige etiqueta manual. Se registran ID
@@ -102,6 +105,7 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
 11. El comando de exportación selecciona solo `accepted` sin alertas pendientes,
     prioriza la última etiqueta manual y usa la automática si no existe manual.
     Genera CSV/manifiesto reproducibles, sin metadatos de contribuyente o revisor.
+    La exclusión de alertas se aplica también a aportes aceptados previamente.
 
 Errores públicos nunca contienen el SMS ni los valores rechazados. La revisión
 interna no aparece en OpenAPI público. No hay endpoint público de descarga.
@@ -114,7 +118,7 @@ Las etiquetas públicas propuestas son `safe` y `smishing`; el lector del modelo
 consume 0/1 en la exportación. La longitud de entrada del modelo no se confunde
 con el límite de almacenamiento del aporte.
 
-- [Contrato y revisión pendiente #4](https://github.com/smishing-thesis/smishing-backend/issues/4): comparar con el documento original de base de datos indicado por el equipo. No consta esa comprobación todavía.
+- [Contrato y revisión pendiente #4](https://github.com/smishing-thesis/smishing-backend/issues/4): Figura 6 contrastada y esquema corregido; falta registrar el acuerdo con el cliente Android sobre el contrato actualizado.
 - [Autenticación #6](https://github.com/smishing-thesis/smishing-backend/issues/6): el usuario comunicó el 8 de noviembre la aceptación del mecanismo API key. La clave es extraíble de Android y no prueba procedencia oficial. No se afirma una reunión o aceptación directa de terceros.
 - Rotación: añadir clave nueva por entorno, reiniciar, distribuir cliente y retirar
   la anterior de todos los procesos. Revisar en cada publicación del cliente y
@@ -133,7 +137,7 @@ Aplicar migraciones de la rama elegida antes de servir tráfico; downgrade destr
 información y se ensaya solo en base aislada. Los runners funcionales exigen TLS,
 desactivan access logs y proxy headers, y escuchan en loopback por defecto:
 `python -m smishing_backend.server` (8443) y `python -m smishing_backend.review_server`
-(8444). Estos módulos aún no están integrados en main.
+(8444). Ambos runners están implementados e integrados; no están desplegados.
 
 Política inicial recomendada para #17, delegada por el usuario:
 
@@ -160,7 +164,8 @@ y restauración](backup-policy.md) con datos sintéticos y el esquema funcional
 
 ## Revisión del documento contra el código
 
-Se contrastaron las siguientes piezas del commit funcional fijado arriba:
+Se contrastaron las siguientes piezas. La revisión histórica de #14 se distingue
+de la versión integrada del catálogo, revisión y exportación:
 
 | Afirmación | Fuente comprobada |
 | --- | --- |
@@ -168,16 +173,25 @@ Se contrastaron las siguientes piezas del commit funcional fijado arriba:
 | Credencial antes de dominio/cuerpo y rotación | api/authentication.py, config.py |
 | Cuotas y expiración | api/rate_limit.py |
 | Normalización y verificación residual | domain/text.py, domain/privacy.py, domain/contributions.py |
-| Tablas, columnas y restricciones | data/schema.py y migrations/versions/0001–0005 |
+| Tablas, columnas y restricciones | data/schema.py y migrations/versions/0001–0006 |
 | Transacción, duplicados y señales | data/repositories/contributions.py y poisoning.py |
 | Revisión separada/actor y límites | review.py, review_auth.py, data/repositories/review.py |
 | Selección de aceptados y bytes reproducibles | data/repositories/quarantine.py, domain/corpus_export.py, data/export_files.py |
 | Logs y retención real del handler | logging.py, server.py, review_server.py |
 
-CI de esa revisión funcional:
+CI histórica del borrador de señales #14:
 [154 pruebas, tipos, formato, contrato y migraciones en verde](https://github.com/smishing-thesis/smishing-backend/actions/runs/42518509872).
 Incluye PostgreSQL real y datos sintéticos, con 0/20 controles normales marcados
 por las heurísticas en esa muestra. No se reentrenó ni se probó producción.
 
 Este cambio documental no añade rutas, campos ni funcionalidades: conserva la
 distinción entre main, implementación en PR y operación todavía no verificada.
+
+Revalidación del modelo físico tras recibir el Word: 162 pruebas y dos subtests,
+PostgreSQL real, Ruff, formato y tipos correctos. El flujo HTTPS con catálogo
+previo y exportación se registra en docs/evidence/thesis-schema-flow-2026-11-08.json.
+
+Validación de #14 sobre el modelo físico corregido: 173 pruebas y dos subtests,
+Ruff, formato y tipos correctos. Controles sintéticos intercalados 0/20 y
+agrupados por clase 2/20 marcados: una limitación explícita, no una estimación
+poblacional. Ver docs/poisoning-signals.md y docs/evidence/poisoning-controls-2026-11-08.json.

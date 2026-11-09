@@ -5,11 +5,25 @@ from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
+from smishing_backend.domain.privacy import assert_anonymized
+
+
+class DuplicateContribution(Exception):
+    """Content already exists, without revealing review status."""
+
 
 @dataclass(frozen=True)
 class Label:
     value: Literal["safe", "smishing"]
     model_version: str | None
+    origin: Literal["device", "manual"] = "device"
+
+
+class LabelRepository(Protocol):
+    def add_manual(
+        self, contribution_id: UUID, value: Literal["safe", "smishing"]
+    ) -> UUID: ...
+    def verified(self, contribution_id: UUID) -> list[dict]: ...
 
 
 @dataclass(frozen=True)
@@ -22,7 +36,7 @@ class NewContribution:
 @dataclass(frozen=True)
 class SavedContribution:
     id: UUID
-    status: Literal["pending", "accepted", "rejected"]
+    status: Literal["pending"]
     received_at: datetime
 
 
@@ -35,4 +49,9 @@ def receive_contribution(
 ) -> SavedContribution:
     if not contribution.labels:
         raise ValueError("A contribution must have at least one label")
+    assert_anonymized(contribution.text)
     return repository.save(contribution)
+
+
+class UnknownModelVersion(Exception):
+    """The device version has no publication registered by an operator."""
