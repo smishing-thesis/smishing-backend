@@ -46,10 +46,13 @@ Registrar dos veces los mismos hechos reutiliza la misma fila. Si ya se
 registraron hechos distintos para esa versión, se rechaza el reemplazo.
 La operación es transaccional y está protegida bajo concurrencia.
 
-Para mantener compatibilidad, una versión enviada por Android puede crear
-solo una referencia (`metadata_sha256 IS NULL`). No se presenta como publicación
-verificada: el comando del operador completa los metadatos desde GitHub sobre
-el mismo UUID. Recibir un aporte nunca descarga información de GitHub.
+Desde la alineación con la Figura 6 (0005), el catálogo exige metadatos
+completos antes de recibir aportes para esa versión. La API no crea referencias
+incompletas; una versión no registrada da 422 sin escrituras parciales. Ver
+[contraste y actualización de bases existentes](thesis-schema-review.md).
+El comando importa hiperparámetros como JSON serializado TEXT y materializa
+accuracy, precision_score, recall y f1_score NUMERIC(5,4); conserva además los
+agregados originales y su procedencia.
 
 ## Migración y verificación
 
@@ -68,7 +71,7 @@ uv run --locked mypy
 uv run --locked pytest -q
 ```
 
-Resultado: **123 pruebas pasaron**, sin omisiones; Ruff y tipos correctos.
+Resultado: **130 pruebas pasaron**, sin omisiones; Ruff y tipos correctos.
 Incluye coexistencia de etiquetas, restricciones de origen/versión, selección
 de manuales, preferencia para entrenamiento, migración con datos legados,
 registro concurrente/idempotente y rechazo de metadatos inconsistentes.
@@ -77,6 +80,7 @@ dos veces contra los assets reales publicados de v1.0.0, sin copiar SMS ni
 archivos de publicación al repositorio, sobre una base de prueba; ambos
 registros fueron correctos y `alembic check` no encontró diferencias.
 
-Esta rama depende de `feat/18-backend-ci`; su PR contiene solo #15. El código
-está listo para revisión, no integrado en main ni desplegado. No se da por
-terminada una historia pendiente de esa revisión únicamente por un test verde.
+Revalidado sobre main después de integrar #34: 130 pruebas y dos subtests,
+con importación real de v1.0.0 repetida sobre un esquema temporal nuevo.
+[Resultado de la importación](evidence/catalog-2026-11-08.json).
+El PR #38 tiene base main y contiene solo #15. No se ha desplegado.

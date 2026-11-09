@@ -57,7 +57,7 @@ en memoria; evaluar streaming si el volumen futuro lo requiere.
 
 ## Evidencia
 
-Suite con PostgreSQL 17 real: **145 pruebas pasaron**; Ruff, formato y mypy
+Suite con PostgreSQL 17 real: **152 pruebas pasaron**; Ruff, formato y mypy
 correctos. Cubre exclusión de pendientes/rechazados, etiqueta corregida, origen,
 reproducibilidad ante orden e IDs distintos, fallback automático, corrupción,
 concurrencia y el comando real. Solo se usan SMS sintéticos.
@@ -68,6 +68,12 @@ su huella se comprueba antes de cargarlo. Ve `tests/compat/README.md`. Leyó el
 CSV exportado con las dos clases correctas y procesó los placeholders.
 No se ejecutó entrenamiento ni se afirma calidad estadística con esas pruebas.
 
-Este PR se apila sobre #13 y #15; sigue pendiente de revisión e integración.
+Revalidado sobre main con #13 y #15 integradas: 152 pruebas y dos subtests.
+Un ensayo real con dos servidores HTTPS, certificado verificado y PostgreSQL
+creó cuatro aportes sintéticos: dos aceptados, uno rechazado y uno pendiente.
+Solo los dos aceptados llegaron al CSV; el lector real del modelo los leyó
+y una segunda exportación produjo exactamente los mismos bytes.
+[Resultado del flujo](evidence/corpus-flow-2026-11-08.json).
+El PR #40 tiene base main; no se ha desplegado ni entrenado un modelo.
 Las señales de envenenamiento específicas son la historia #14, no se simulan
 por el hecho de que un aporte tenga revisión manual.

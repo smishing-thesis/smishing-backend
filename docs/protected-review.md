@@ -72,7 +72,7 @@ incluyen el ID autorizado. Los puertos internos antiguos no se publican.
 
 ## Verificación
 
-PostgreSQL 17 real, suite local: **138 pruebas pasaron**, sin omisiones; Ruff,
+PostgreSQL 17 real, suite local: **145 pruebas pasaron**, sin omisiones; Ruff,
 formato y mypy correctos. Se verifica acceso con clave de app, revisor y sin
 credencial; 401 aun con cuerpo inválido, separación del contrato público,
 corrección/conservación de etiquetas, fecha/revisor, concurrencia, rollback
@@ -80,5 +80,10 @@ forzado al fallar auditoría y restricciones directas. Solo datos sintéticos.
 Reproducir con los comandos del README y SMISHING_TEST_DATABASE_URL en una base
 dedicada terminada en `_test`.
 
-Este PR se apila sobre #15; no se integra en main ni se despliega. La revisión
-de cambios y aceptación por el equipo siguen pendientes antes de declarar Done.
+Revalidado con la base actualizada de #15 y main: 145 pruebas y dos subtests.
+Además, un ensayo con dos servidores Uvicorn y certificados verificados comprobó
+la recepción pública y la revisión privada contra PostgreSQL real: acceso de
+app y sin credencial rechazado, dos aceptados, un rechazado y un pendiente.
+La corrección de etiqueta mantuvo la automática y registró la manual junto
+al revisor y la fecha. Solo SMS sintéticos; sin despliegue.
+El PR #39 depende de #15; al integrarla se cambia su base a main.

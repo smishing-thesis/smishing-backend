@@ -3,7 +3,6 @@
 from uuid import uuid4
 
 from sqlalchemy import Engine, insert, select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 
 from smishing_backend.data.schema import contributions, labels, model_versions
@@ -11,6 +10,7 @@ from smishing_backend.domain.contributions import (
     DuplicateContribution,
     NewContribution,
     SavedContribution,
+    UnknownModelVersion,
 )
 
 
@@ -54,17 +54,12 @@ class PostgresContributionRepository:
             model_id = None
             if label.model_version is not None:
                 model_id = connection.execute(
-                    pg_insert(model_versions)
-                    .values(id=uuid4(), version=label.model_version)
-                    .on_conflict_do_nothing(index_elements=[model_versions.c.version])
-                    .returning(model_versions.c.id)
+                    select(model_versions.c.id).where(
+                        model_versions.c.version == label.model_version
+                    )
                 ).scalar_one_or_none()
                 if model_id is None:
-                    model_id = connection.execute(
-                        select(model_versions.c.id).where(
-                            model_versions.c.version == label.model_version
-                        )
-                    ).scalar_one()
+                    raise UnknownModelVersion()
             connection.execute(
                 insert(labels).values(
                     id=uuid4(),

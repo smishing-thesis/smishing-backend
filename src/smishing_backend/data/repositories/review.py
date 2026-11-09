@@ -108,7 +108,7 @@ class PostgresReviewRepository:
                 select(
                     contributions.c.id,
                     contributions.c.text,
-                    contributions.c.status,
+                    contributions.c.status.label("status"),
                     func.array_agg(risk_flags.c.code).label("signals"),
                 )
                 .join(risk_flags, risk_flags.c.contribution_id == contributions.c.id)

@@ -28,66 +28,6 @@ from smishing_backend.domain.model_catalog import (
 from smishing_backend.domain.quarantine import register_review
 
 
-@pytest.fixture
-def published_metadata():
-    release = {
-        "tag_name": "v1.0.0",
-        "html_url": "https://github.com/smishing-thesis/charcnn-smishing-model/releases/tag/v1.0.0",
-        "published_at": "2026-01-02T00:00:00Z",
-        "draft": False,
-        "prerelease": True,
-    }
-    training = {
-        "model_version": "1.0.0",
-        "model_sha256": "a" * 64,
-        "trained_at": "2026-01-01T00:00:00Z",
-        "corpus_version": "synthetic-1",
-        "dataset_sha256": "b" * 64,
-        "dataset_path": "SYNTHETIC_PRIVATE_PATH",
-        "hyperparameters": {
-            "embedding_dim": 8,
-            "conv_filters": 4,
-            "kernel_size": 3,
-            "dense_units": 4,
-            "maxlen": 64,
-            "optimizer": "adam",
-            "loss": "binary_crossentropy",
-            "epochs": 2,
-            "batch_size": 4,
-            "early_stopping_patience": 1,
-            "early_stopping_monitor": "val_loss",
-            "class_weight": "balanced",
-            "val_fraction": 0.2,
-            "target_fpr": 0.01,
-        },
-    }
-    evaluation = {
-        "model_version": "1.0.0",
-        "model_sha256": "a" * 64,
-        "threshold": 0.75,
-        "validation_metrics_at_threshold": {
-            "accuracy": 0.8,
-            "precision": 1.0,
-            "recall": 0.5,
-            "f1": 0.66,
-            "fpr": 0.0,
-            "balanced_accuracy": 0.75,
-            "tp": 1,
-            "fp": 0,
-            "tn": 3,
-            "fn": 1,
-        },
-        "external_imc25_peru": {
-            "n": 2,
-            "detected": 1,
-            "recall_at_threshold": 0.5,
-            "median_score": 0.6,
-        },
-        "robustness_suite": [{"message": "SYNTHETIC_PRIVATE_MESSAGE"}],
-    }
-    return release, training, evaluation
-
-
 def test_publication_keeps_only_catalog_facts(published_metadata):
     publication = parse_publication(*published_metadata)
     assert publication.version == "1.0.0"
@@ -167,7 +107,7 @@ def test_reader_uses_only_fixed_repository_metadata(monkeypatch, published_metad
         read_github_publication("../arbitrary")
 
 
-def test_register_fills_existing_reference_idempotently(pg, published_metadata):
+def test_register_reuses_registered_publication_idempotently(pg, published_metadata):
     cid = (
         PostgresContributionRepository(pg)
         .save(NewContribution("Mensaje sintético", "a" * 64, (Label("safe", "1.0.0"),)))
@@ -236,7 +176,7 @@ def test_database_provenance_constraints(pg, origin, version):
                 id=cid, text="Sintético", content_hash="a" * 64
             )
         )
-        conn.execute(insert(model_versions).values(id=mid, version="1.0.0"))
+        mid = conn.scalar(select(model_versions.c.id))
     with pytest.raises(IntegrityError), pg.begin() as conn:
         conn.execute(
             insert(labels).values(
@@ -274,7 +214,7 @@ def test_upgrade_preserves_device_labels_and_refuses_unknown_legacy_origin(empty
     with empty_pg.begin() as conn:
         assert conn.scalar(text("SELECT version_num FROM alembic_version")) == "0002"
         conn.execute(text("UPDATE labels SET model_version_id=:id"), {"id": mid})
-    migrate(empty_pg)
+    migrate(empty_pg, "0003")
     with empty_pg.connect() as conn:
-        assert conn.scalar(select(labels.c.origin)) == "device"
-        assert conn.scalar(select(labels.c.model_version_id)) == mid
+        assert conn.scalar(text("SELECT origin FROM labels")) == "device"
+        assert conn.scalar(text("SELECT model_version_id FROM labels")) == mid

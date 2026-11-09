@@ -14,6 +14,7 @@ from smishing_backend.domain.contributions import (
     DuplicateContribution,
     Label,
     NewContribution,
+    UnknownModelVersion,
     receive_contribution,
 )
 from smishing_backend.domain.privacy import ResidualPersonalData
@@ -56,7 +57,7 @@ def contribute(
         )
     except DuplicateContribution:
         raise fail(409) from None
-    except ResidualPersonalData:
+    except (ResidualPersonalData, UnknownModelVersion):
         raise fail(422) from None
     audit.info("contribution_accepted")
     return ContributionCreated(id=saved.id, status=saved.status)

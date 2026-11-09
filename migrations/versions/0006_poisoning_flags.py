@@ -3,8 +3,8 @@
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0005"
-down_revision = "0004"
+revision = "0006"
+down_revision = "0005"
 branch_labels = None
 depends_on = None
 
@@ -16,7 +16,7 @@ def upgrade():
         sa.Column(
             "contribution_id",
             sa.Uuid(),
-            sa.ForeignKey("contributions.id", ondelete="CASCADE"),
+            sa.ForeignKey("contributed_message.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column("code", sa.String(32), nullable=False),
@@ -45,9 +45,11 @@ def upgrade():
         unique=True,
         postgresql_where=sa.text("reviewed_at IS NULL"),
     )
-    op.create_index("ix_contributions_received_at", "contributions", ["received_at"])
+    op.create_index(
+        "ix_contributions_received_at", "contributed_message", ["received_at"]
+    )
 
 
 def downgrade():
-    op.drop_index("ix_contributions_received_at", table_name="contributions")
+    op.drop_index("ix_contributions_received_at", table_name="contributed_message")
     op.drop_table("risk_flags")

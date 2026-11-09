@@ -2,8 +2,9 @@
 
 API optativa de aportes SMS ya anonimizados, Python 3.12 y FastAPI. La inferencia
 Char-CNN/LiteRT permanece en Android; este servicio no clasifica mensajes.
-La base #3/#8/#9 ya está integrada en main. Las funciones posteriores siguen
-en PR de revisión; consulta el [estado por hitos](docs/milestones-2026-11-08.md).
+La base y el flujo de aportes se integran por historias verificadas. Consulta
+[arquitectura, privacidad y estado real](docs/architecture-privacy.md) para
+distinguir main de las funciones internas que siguen en PR.
 
 ## Desarrollo y verificación
 
@@ -28,7 +29,9 @@ esquema aleatorio por prueba. El ensayo HTTPS usa certificado efímero verificad
 OpenSSL y Uvicorn local; no despliega servicios. No usar corpus real en pruebas.
 
 Para migraciones, configurar SMISHING_DATABASE_URL en la base correspondiente y
-correr `uv run --locked alembic upgrade head`. En una base vacía dedicada se prueba
+correr `uv run --locked alembic upgrade head`. Antes de recibir aportes, registrar
+su versión mediante `uv run --locked python -m smishing_backend.catalog --release v1.0.0`.
+Para bases existentes, seguir la preparación en [contraste con la Memoria](docs/thesis-schema-review.md). En una base vacía dedicada se prueba
 `alembic downgrade base` seguido de `alembic upgrade head`.
 
 ## Servidor local TLS
@@ -75,8 +78,8 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 - [Logs y respaldos](docs/privacy-operations.md) y [CI](docs/ci.md).
 - [Origen de etiquetas y catálogo del modelo (#15)](docs/label-provenance.md).
 - [Revisión interna protegida (#13)](docs/protected-review.md).
-- [Exportación reproducible para el modelo (#16)](docs/corpus-export.md).
 - [Señales de posible envenenamiento (#14)](docs/poisoning-signals.md).
+- [Exportación reproducible para el modelo (#16)](docs/corpus-export.md).
 
 Antes de recepción pública faltan el acuerdo móvil, decisiones operativas de
 credenciales y revisión de respaldos/retención en la infraestructura elegida.

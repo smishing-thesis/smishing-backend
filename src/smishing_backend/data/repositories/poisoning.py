@@ -7,11 +7,17 @@ from sqlalchemy.dialects.postgresql import insert
 from smishing_backend.data.repositories.contributions import (
     PostgresContributionRepository,
 )
-from smishing_backend.data.schema import contributions, labels, risk_flags
+from smishing_backend.data.schema import (
+    contributions,
+    labels,
+    model_versions,
+    risk_flags,
+)
 from smishing_backend.domain.contributions import (
     DuplicateContribution,
     NewContribution,
     SavedContribution,
+    UnknownModelVersion,
 )
 from smishing_backend.domain.poisoning import (
     ObservedContribution,
@@ -47,6 +53,17 @@ class RiskAwareContributionRepository(PostgresContributionRepository):
     def _save(self, contribution: NewContribution) -> SavedContribution:
         with self.engine.begin() as connection:
             lock_risk_snapshot(connection)
+            for label in contribution.labels:
+                if (
+                    label.model_version is not None
+                    and connection.scalar(
+                        select(model_versions.c.id).where(
+                            model_versions.c.version == label.model_version
+                        )
+                    )
+                    is None
+                ):
+                    raise UnknownModelVersion()
             existing = connection.execute(
                 select(contributions.c.id, labels.c.value)
                 .join(labels, labels.c.contribution_id == contributions.c.id)

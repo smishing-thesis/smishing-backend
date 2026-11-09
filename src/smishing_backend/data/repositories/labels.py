@@ -33,7 +33,7 @@ class PostgresLabelRepository:
             return [
                 dict(row)
                 for row in connection.execute(
-                    select(labels)
+                    select(*(column.label(column.key) for column in labels.c))
                     .where(
                         labels.c.contribution_id == contribution_id,
                         labels.c.origin == "manual",

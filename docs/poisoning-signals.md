@@ -59,7 +59,7 @@ Los tests usan solo referencias sintéticas; no equivalen a esa configuración.
 
 ## Marcado, revisión y entrenamiento
 
-0005 crea `risk_flags` con tipo de señal, fecha y revisión posterior atribuida.
+0006 crea `risk_flags` después de la alineación física 0005 de la Memoria con tipo de señal, fecha y revisión posterior atribuida.
 No incluye el cuerpo del duplicado, datos del remitente ni del contribuyente.
 Solo hay una alerta no resuelta por aporte/tipo; al resolverse conserva el
 histórico y permite una nueva alerta futura. No se divulgan señales al cliente:
@@ -94,14 +94,35 @@ de producción a partir de los tests pequeños.
 
 ## Verificación real del hito
 
-PostgreSQL 17, suite completa: **154 pruebas pasaron**, sin omisiones; Ruff,
+PostgreSQL 17, suite completa: **173 pruebas pasaron**, sin omisiones; Ruff,
 formato y mypy correctos. Se probaron las cuatro señales, conflicto posterior
 a aceptación, bloqueo de exportación, confirmación atribuida, reaparición de
 una alerta, concurrencia y rollback forzado. No se usaron SMS reales.
 
-Falsos marcados: **0/20 controles sintéticos diversos y balanceados** con base
-previa balanceada. El valor se registra como propiedad JUnit; es el resultado
-de esos controles, no una estimación del desempeño sobre mensajes reales.
+Falsos marcados con veinte plantillas sintéticas legibles, diez aportes de
+cada clase, y base previa balanceada:
+
+| Orden de llegada de los controles | Marcados / total | Causa |
+| --- | --- | --- |
+| Clases intercaladas | 0/20 (0 %) | Ninguna |
+| Diez de una clase seguidos de diez de la otra | 2/20 (10 %) | class_shift |
+
+Se registra el resultado de ambos escenarios en JUnit y en
+[evidencia de controles](evidence/poisoning-controls-2026-11-08.json).
+Las plantillas no contienen datos personales. Estos porcentajes describen
+exclusivamente esas muestras, sin estimar rendimiento poblacional. El resultado
+agrupado muestra una limitación: un cambio legítimo puede generar revisión.
+Se conserva el umbral 0.4 como valor inicial conservador para el corpus del
+prototipo; una alerta no rechaza automáticamente ni acusa al contribuyente.
+La calibración con tráfico autorizado futuro debe revisar ese coste humano.
+
+El ensayo con dos servidores HTTPS reales y certificado verificado comprobó
+que una marca exige reconocimiento para aceptar y que una contradicción nueva
+excluye un aporte antes aceptado de la selección de exportación hasta otra
+revisión autorizada. El CSV final se leyó con el consumidor real del modelo y
+se reprodujo byte a byte. [Resultado](evidence/poisoning-flow-2026-11-08.json).
+Además se prueba el arranque real con archivo de referencias configurado; una
+versión de modelo desconocida no puede provocar marcas sobre un aporte previo.
 
 ```sh
 # Base PostgreSQL aislada configurada con SMISHING_TEST_DATABASE_URL
@@ -111,6 +132,8 @@ uv run --locked ruff format --check src tests migrations
 uv run --locked mypy
 ```
 
-Pendiente de revisión del equipo, calibración y referencias operativas antes de
-recepción pública. El PR se apila sobre #16, #13 y #15. No se declara Done ni
-se hace despliegue por disponer de implementación y tests.
+Los valores iniciales se seleccionan por criterio técnico delegado por el usuario,
+con sus límites y el coste de falsos marcados registrados arriba. El PR #41 tiene
+base main y cumple la verificación sintética de #14; no se afirma calibración real.
+Antes de recepción pública deben configurarse referencias anonimizadas autorizadas
+fuera de Git y revisar capacidad/latencia. No se ha hecho despliegue.
