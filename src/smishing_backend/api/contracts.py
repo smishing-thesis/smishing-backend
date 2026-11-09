@@ -13,7 +13,7 @@ ModelVersion = Annotated[
     str,
     StringConstraints(
         strict=True,
-        max_length=64,
+        max_length=20,
         pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?$",
     ),
 ]

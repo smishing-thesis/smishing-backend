@@ -29,7 +29,9 @@ esquema aleatorio por prueba. El ensayo HTTPS usa certificado efímero verificad
 OpenSSL y Uvicorn local; no despliega servicios. No usar corpus real en pruebas.
 
 Para migraciones, configurar SMISHING_DATABASE_URL en la base correspondiente y
-correr `uv run --locked alembic upgrade head`. En una base vacía dedicada se prueba
+correr `uv run --locked alembic upgrade head`. Antes de recibir aportes, registrar
+su versión mediante `uv run --locked python -m smishing_backend.catalog --release v1.0.0`.
+Para bases existentes, seguir la preparación en [contraste con la Memoria](docs/thesis-schema-review.md). En una base vacía dedicada se prueba
 `alembic downgrade base` seguido de `alembic upgrade head`.
 
 ## Servidor local TLS

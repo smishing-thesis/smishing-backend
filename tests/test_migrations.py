@@ -4,7 +4,7 @@ import pytest
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from conftest import migrate
-from sqlalchemy import insert, inspect
+from sqlalchemy import insert, inspect, select
 from sqlalchemy.exc import IntegrityError
 
 from smishing_backend.data.schema import contributions, labels, metadata, model_versions
@@ -14,9 +14,9 @@ def test_upgrade_downgrade_upgrade(empty_pg):
     migrate(empty_pg)
     assert set(inspect(empty_pg).get_table_names()) == {
         "alembic_version",
-        "contributions",
-        "labels",
-        "model_versions",
+        "contributed_message",
+        "message_label",
+        "model_version",
         "reviews",
     }
     with empty_pg.connect() as conn:
@@ -24,7 +24,7 @@ def test_upgrade_downgrade_upgrade(empty_pg):
     migrate(empty_pg, "base", downgrade=True)
     assert inspect(empty_pg).get_table_names() == ["alembic_version"]
     migrate(empty_pg)
-    assert "contributions" in inspect(empty_pg).get_table_names()
+    assert "contributed_message" in inspect(empty_pg).get_table_names()
 
 
 @pytest.mark.parametrize(
@@ -71,7 +71,7 @@ def test_label_foreign_keys_optional_version_and_values(pg):
                 id=cid, text="Sintético", content_hash="b" * 64
             )
         )
-        conn.execute(insert(model_versions).values(id=mid, version="1.0.0"))
+        mid = conn.scalar(select(model_versions.c.id))
         conn.execute(
             insert(labels),
             [

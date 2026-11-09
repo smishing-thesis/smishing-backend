@@ -46,10 +46,13 @@ Registrar dos veces los mismos hechos reutiliza la misma fila. Si ya se
 registraron hechos distintos para esa versión, se rechaza el reemplazo.
 La operación es transaccional y está protegida bajo concurrencia.
 
-Para mantener compatibilidad, una versión enviada por Android puede crear
-solo una referencia (`metadata_sha256 IS NULL`). No se presenta como publicación
-verificada: el comando del operador completa los metadatos desde GitHub sobre
-el mismo UUID. Recibir un aporte nunca descarga información de GitHub.
+Desde la alineación con la Figura 6 (0005), el catálogo exige metadatos
+completos antes de recibir aportes para esa versión. La API no crea referencias
+incompletas; una versión no registrada da 422 sin escrituras parciales. Ver
+[contraste y actualización de bases existentes](thesis-schema-review.md).
+El comando importa hiperparámetros como JSON serializado TEXT y materializa
+accuracy, precision_score, recall y f1_score NUMERIC(5,4); conserva además los
+agregados originales y su procedencia.
 
 ## Migración y verificación
 
