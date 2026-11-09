@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-08",
+  "source_revision": "deca983, plus PR43 logging-only changes",
+  "synthetic_only": true,
+  "postgres": "17",
+  "schema_version": "0006",
+  "counts_equal": true,
+  "content_checksums_equal": true,
+  "quarantine_trigger_restored": true,
+  "invalid_status_rejected": true,
+  "authenticated_encryption": "AES-256-GCM",
+  "ciphertext_tampering_rejected": true,
+  "dump_bytes": 18329,
+  "local_round_trip_seconds": 0.984,
+  "tables": [
+    "alembic_version",
+    "contributed_message",
+    "message_label",
+    "model_version",
+    "reviews",
+    "risk_flags"
+  ],
+  "counts": [
+    "contributions|2",
+    "labels|3",
+    "models|1",
+    "reviews|1",
+    "risk_flags|0"
+  ],
+  "production_backup_configured": false,
+  "key_persisted": false
+}

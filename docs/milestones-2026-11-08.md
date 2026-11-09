@@ -29,8 +29,9 @@ Una marca requiere revisión, no constituye rechazo ni atribución de intención
 
 - #4: el Word ya fue contrastado; falta registrar acuerdo con el cliente Android
   sobre el contrato actualizado y el registro previo de versiones.
-- #17: respaldos y retención operativa de consola/inactividad. PR #43 conserva
-  evidencia local histórica; no equivale a infraestructura configurada.
+- #17: PR #43 incorpora retención automática local, consola desactivada y revisión
+  de respaldo 0006. El despliegue debe programar copias, custodiar claves y
+  revisar logs externos; no equivale a infraestructura configurada.
 - #18: CI existe, falta exigir su check en protección de main.
 - #19/#20: infraestructura Azure, red privada, secretos y TLS del despliegue.
 - Para operación de #14: referencias de evaluación anonimizadas autorizadas y

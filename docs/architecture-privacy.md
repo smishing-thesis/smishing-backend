@@ -141,10 +141,10 @@ desactivan access logs y proxy headers, y escuchan en loopback por defecto:
 
 Política inicial recomendada para #17, delegada por el usuario:
 
-- Logs de eventos sin contenido/credenciales/red: 7 días, rotación diaria.
-  El handler local existente mantiene seis históricos y uno activo; la poda ocurre
-  al rotar, de modo que un servicio detenido requiere limpieza antes de reiniciar.
-  No es una prueba de borrado automático por edad durante inactividad.
+- Logs de eventos sin contenido/credenciales/red: siete días calendario UTC,
+  rotación diaria y limpieza cada 60 segundos sin tráfico, además de al arrancar.
+  No se añade handler de consola. Un proceso apagado no ejecuta el mantenimiento;
+  si se exige expiración durante apagados, el despliegue necesita limpieza externa.
 - Respaldos diarios cifrados de corpus y auditoría, con acceso restringido y 7 días
   de retención. No respaldar secretos, corpus originales ni carpetas del dispositivo.
 - Objetivo inicial de pérdida máxima: 24 horas con respaldo diario (RPO). Objetivo
@@ -152,11 +152,15 @@ Política inicial recomendada para #17, delegada por el usuario:
 - Probar una restauración aislada antes del despliegue y al cambiar esquema o
   procedimiento; después, una comprobación mensual como punto de partida.
 
-Estas recomendaciones **no equivalen a respaldos configurados o restauración
-probada**. #17 sigue pendiente de verificación operativa. #18 tiene CI verde/roja
+La restauración sintética está probada, pero estas recomendaciones **no equivalen
+a respaldos de producción configurados**. #18 tiene CI verde/roja
 controlada, pero falta exigir su check en protección de main; un test verde no
 bloquea merges por sí solo. Azure/red privada/secretos/TLS/CORS de despliegue son
 #19/#20 y no se han configurado ni desplegado en esta sesión.
+
+Actualización de evidencia: se completó un [simulacro local cifrado de respaldo
+y restauración](backup-policy.md) con datos sintéticos y el esquema funcional
+0006. No equivale a programación, retención o recuperación de producción.
 
 ## Revisión del documento contra el código
 
@@ -191,3 +195,9 @@ Validación de #14 sobre el modelo físico corregido: 173 pruebas y dos subtests
 Ruff, formato y tipos correctos. Controles sintéticos intercalados 0/20 y
 agrupados por clase 2/20 marcados: una limitación explícita, no una estimación
 poblacional. Ver docs/poisoning-signals.md y docs/evidence/poisoning-controls-2026-11-08.json.
+
+Verificación #17: 177 pruebas y dos subtests; retención sin tráfico y al arranque,
+sin consola de aplicación, eventos permitidos y ausencia de eco aun al fallar
+el almacenamiento. Restauración 0006 con cifrado autenticado verificada en
+docs/evidence/backup-restore-2026-11-08.json. Condiciones de operación Azure
+pendientes de implementar y verificar con #19/#20.
