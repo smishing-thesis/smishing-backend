@@ -8,7 +8,7 @@ ni crea recursos, tareas programadas o secretos de producción.
 
 | Elemento | Política inicial | Estado |
 | --- | --- | --- |
-| Logs | Eventos permitidos sin SMS, IP o credenciales, 7 días | Código funcional en PR #33; falta verificar retención de consola |
+| Logs | Eventos permitidos sin SMS, IP o credenciales, 7 días | Handler automático en PR #43; consola de aplicación desactivada |
 | Copia de base | Diaria, cifrada y con acceso restringido | Sin programación ni almacenamiento configurados |
 | Retención de copias | 7 días | Pendiente de configurar en el almacén elegido |
 | Pérdida máxima objetivo (RPO) | 24 horas | Objetivo acorde a copia diaria, no garantía medida |
@@ -29,8 +29,8 @@ excluye pendientes, rechazados y metadatos necesarios para restaurar el servicio
 
 ## Simulacro realizado
 
-Entorno Cloud, PostgreSQL 17, código funcional fijado a `1dc7862`, esquema
-0005. Se crearon dos bases temporales nuevas con sufijo `_test`, sin usar la
+Entorno Cloud, PostgreSQL 17, código funcional fijado a `deca983`, esquema
+0006, más cambios de logging de #43. Se crearon dos bases temporales nuevas con sufijo `_test`, sin usar la
 base del usuario ni corpus reales. La fuente contenía exclusivamente dos
 mensajes sintéticos anonimizados, sus etiquetas y una revisión ficticia.
 
@@ -45,23 +45,29 @@ Pasos efectivamente ejecutados:
    cuarentena y que PostgreSQL rechaza un estado no permitido.
 7. Eliminar ambas bases y no conservar la clave o el dump en claro.
 
-Resultado: coincidieron 2 aportes, 3 etiquetas, 1 referencia de modelo y 1
+Resultado: coincidieron 2 aportes, 3 etiquetas, 1 versión de modelo con metadatos reales publicados y 1
 revisión. También se restauraron metadatos de migración y la tabla de marcas,
-vacía en este caso. El dump tuvo 17392 bytes. La ida/vuelta local pequeña tardó
-0.96 segundos: **no mide el RTO de producción ni representa una prueba de carga**.
+vacía en este caso. El dump tuvo 18329 bytes. La ida/vuelta local pequeña tardó
+0.984 segundos: **no mide el RTO de producción ni representa una prueba de carga**.
 
 [Evidencia estructurada](evidence/backup-restore-2026-11-08.json), sin SMS,
 credenciales, claves, nombres de bases temporales o datos del contribuyente.
 Fue un ensayo efímero, no un respaldo de producción conservado en disco.
 
-## Lo que aún impide cerrar #17
+## Criterios de backend y condiciones del despliegue
 
-- Elegir y configurar almacén, programación diaria, retención y custodia de claves.
-- Verificar permisos y una recuperación con la configuración que se desplegará.
-- Comprobar retención de consola en la plataforma. El handler local existente
-  rota cuando recibe eventos: seis históricos no prueban borrado estricto por
-  edad si el servicio queda detenido. Definir/ensayar limpieza operativa o
-  automatizar esa expiración antes de prometer una retención temporal estricta.
+#17 verifica logs sin contenido/red, retención definida/configurada y revisión
+de respaldos. El backend usa ahora siete días calendario UTC, mantenimiento
+cada 60 segundos sin tráfico y limpieza al arrancar; no duplica eventos en
+consola. Se prueba la solicitud aceptada/rechazada, retención y fallo de disco
+sin eco. La revisión de tablas y restauración real se realizó sobre 0006.
 
-Este documento reduce incertidumbre con evidencia local, pero no declara
-operaciones inexistentes ni cierra #17/#19/#20. No cambia código de ejecución.
+Esto no equivale a un servicio de backups de producción. Al desplegar #19/#20
+se deben configurar almacén, programación diaria, retención de copias, custodia
+y recuperación de claves, y desactivar/revisar access logs de Azure y proxies.
+Si se exige eliminación durante apagados, debe existir limpieza externa:
+un proceso detenido no puede ejecutar su hilo de retención. Estos controles
+se registran como condiciones del despliegue; no se simulan como realizados.
+
+RPO/RTO de 24h siguen siendo objetivos iniciales, no garantías operativas.
+No se ha desplegado ni se ha conservado un dump real o clave de producción.
