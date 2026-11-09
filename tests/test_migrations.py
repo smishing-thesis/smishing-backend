@@ -18,6 +18,7 @@ def test_upgrade_downgrade_upgrade(empty_pg):
         "message_label",
         "model_version",
         "reviews",
+        "risk_flags",
     }
     with empty_pg.connect() as conn:
         assert compare_metadata(MigrationContext.configure(conn), metadata) == []

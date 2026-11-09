@@ -52,7 +52,9 @@ materializan a cuatro decimales desde esos agregados. No se recalculan métricas
 ni se ejecuta inferencia. El JSON agregado conserva su precisión original.
 
 Estas extensiones están documentadas; no se afirma que aparezcan en la Figura 6.
-Las señales de #14 siguen en un PR separado y no forman parte de esta corrección.
+Las señales de #14 pertenecen a una migración adicional 0006, en PR #41,
+separada de la corrección física 0005. risk_flags es otra extensión explícita,
+sin campos de persona/dispositivo.
 
 ## Catálogo completo antes de recibir aportes
 

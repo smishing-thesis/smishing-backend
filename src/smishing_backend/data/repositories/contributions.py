@@ -31,38 +31,42 @@ class PostgresContributionRepository:
             raise
 
     def _save(self, contribution: NewContribution) -> SavedContribution:
-        # begin commits only after all labels succeed; any failure rolls back all rows.
         with self.engine.begin() as connection:
-            row = connection.execute(
-                insert(contributions)
-                .values(
-                    id=uuid4(),
-                    text=contribution.text,
-                    content_hash=contribution.content_hash,
-                )
-                .returning(
-                    contributions.c.id,
-                    contributions.c.status,
-                    contributions.c.received_at,
-                )
-            ).one()
-            for label in contribution.labels:
-                model_id = None
-                if label.model_version is not None:
-                    model_id = connection.execute(
-                        select(model_versions.c.id).where(
-                            model_versions.c.version == label.model_version
-                        )
-                    ).scalar_one_or_none()
-                    if model_id is None:
-                        raise UnknownModelVersion()
-                connection.execute(
-                    insert(labels).values(
-                        id=uuid4(),
-                        contribution_id=row.id,
-                        model_version_id=model_id,
-                        value=label.value,
-                        origin=label.origin,
+            return self._save_on_connection(connection, contribution)
+
+    def _save_on_connection(
+        self, connection, contribution: NewContribution
+    ) -> SavedContribution:
+        row = connection.execute(
+            insert(contributions)
+            .values(
+                id=uuid4(),
+                text=contribution.text,
+                content_hash=contribution.content_hash,
+            )
+            .returning(
+                contributions.c.id,
+                contributions.c.status,
+                contributions.c.received_at,
+            )
+        ).one()
+        for label in contribution.labels:
+            model_id = None
+            if label.model_version is not None:
+                model_id = connection.execute(
+                    select(model_versions.c.id).where(
+                        model_versions.c.version == label.model_version
                     )
+                ).scalar_one_or_none()
+                if model_id is None:
+                    raise UnknownModelVersion()
+            connection.execute(
+                insert(labels).values(
+                    id=uuid4(),
+                    contribution_id=row.id,
+                    model_version_id=model_id,
+                    value=label.value,
+                    origin=label.origin,
                 )
+            )
         return SavedContribution(row.id, row.status, row.received_at)

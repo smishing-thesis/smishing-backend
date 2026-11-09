@@ -1,0 +1,17 @@
+{
+  "synthetic_only": true,
+  "population_estimate": false,
+  "settings": "documented defaults; class_delta=0.4",
+  "controls": [
+    {
+      "ordered_by_class": false,
+      "false_marked": 0,
+      "total": 20
+    },
+    {
+      "ordered_by_class": true,
+      "false_marked": 2,
+      "total": 20
+    }
+  ]
+}

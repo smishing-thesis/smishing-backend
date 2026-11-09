@@ -16,7 +16,8 @@ pendiente no se dan por verificados por integrar ese código.
 Las funciones de catálogo/etiquetas (#15), revisión privada (#13) y exportación
 (#16) están integradas mediante PR #38/#39/#40 y probadas juntas con main.
 La corrección de #8 añade la migración 0005 para coincidir con la Figura 6.
-Las señales de #14 siguen en el borrador #41, fuera de esta versión de main.
+El PR #41 añade las señales de #14 a esta versión, con migración 0006 y
+revisión obligatoria antes de entrenar/exportar un aporte marcado.
 
 ## Responsabilidades
 
@@ -47,8 +48,8 @@ flowchart LR
 
 ## Modelo de datos y privacidad
 
-El esquema se reconstruye con migraciones 0001–0005. La 0005 corresponde al
-modelo físico de la Memoria; las señales del borrador #14 se migran por separado.
+El esquema se reconstruye con migraciones 0001–0006. La 0005 corresponde al
+modelo físico de la Memoria; la 0006 añade las señales de #14 por separado.
 No aplicar migraciones desde una rama que no contiene su implementación.
 
 | Tabla | Contenido y relaciones | Disponibilidad |
@@ -57,7 +58,7 @@ No aplicar migraciones desde una rama que no contiene su implementación.
 | message_label | Etiqueta y referencia opcional al modelo; FK al aporte | Main; source y created_at; nombres del Word en 0005 |
 | model_version | Referencia de versión; metadatos agregados importados de una publicación | Catálogo completo obligatorio; tipos del Word en 0005 |
 | reviews | Revisor interno, decisión, motivo, fecha y etiqueta manual del mismo aporte | Main, 0004 |
-| risk_flags | Tipo de señal, aporte afectado y revisión posterior atribuida | Borrador #41, fuera del esquema actual |
+| risk_flags | Tipo de señal, aporte afectado y revisión posterior atribuida | 0006, PR #41 |
 | alembic_version | Versión técnica del esquema | Main |
 
 En 0003, una etiqueta de origen `device` exige modelo y una `manual` lo prohíbe.
@@ -99,12 +100,12 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
 9. El revisor entra a **otra aplicación**, con Bearer distinto de la API key.
    Lista pendientes, acepta/rechaza y elige etiqueta manual. Se registran ID
    autorizado, decisión y fecha junto a la etiqueta, de forma atómica.
-10. En el borrador #14, un marcado requiere reconocimiento explícito de sus alertas. Si una nueva
+10. Un marcado requiere reconocimiento explícito de sus alertas. Si una nueva
     señal afecta a un aceptado, se excluye de entrenamiento hasta revisión.
-11. El comando de exportación selecciona solo `accepted`,
+11. El comando de exportación selecciona solo `accepted` sin alertas pendientes,
     prioriza la última etiqueta manual y usa la automática si no existe manual.
     Genera CSV/manifiesto reproducibles, sin metadatos de contribuyente o revisor.
-    La exclusión adicional de alertas corresponde a la versión propuesta en #14.
+    La exclusión de alertas se aplica también a aportes aceptados previamente.
 
 Errores públicos nunca contienen el SMS ni los valores rechazados. La revisión
 interna no aparece en OpenAPI público. No hay endpoint público de descarga.
@@ -168,7 +169,7 @@ de la versión integrada del catálogo, revisión y exportación:
 | Credencial antes de dominio/cuerpo y rotación | api/authentication.py, config.py |
 | Cuotas y expiración | api/rate_limit.py |
 | Normalización y verificación residual | domain/text.py, domain/privacy.py, domain/contributions.py |
-| Tablas, columnas y restricciones | data/schema.py y migrations/versions/0001–0005 |
+| Tablas, columnas y restricciones | data/schema.py y migrations/versions/0001–0006 |
 | Transacción, duplicados y señales | data/repositories/contributions.py y poisoning.py |
 | Revisión separada/actor y límites | review.py, review_auth.py, data/repositories/review.py |
 | Selección de aceptados y bytes reproducibles | data/repositories/quarantine.py, domain/corpus_export.py, data/export_files.py |
@@ -185,3 +186,8 @@ distinción entre main, implementación en PR y operación todavía no verificad
 Revalidación del modelo físico tras recibir el Word: 162 pruebas y dos subtests,
 PostgreSQL real, Ruff, formato y tipos correctos. El flujo HTTPS con catálogo
 previo y exportación se registra en docs/evidence/thesis-schema-flow-2026-11-08.json.
+
+Validación de #14 sobre el modelo físico corregido: 173 pruebas y dos subtests,
+Ruff, formato y tipos correctos. Controles sintéticos intercalados 0/20 y
+agrupados por clase 2/20 marcados: una limitación explícita, no una estimación
+poblacional. Ver docs/poisoning-signals.md y docs/evidence/poisoning-controls-2026-11-08.json.

@@ -1,0 +1,30 @@
+{
+  "synthetic_only": true,
+  "transport": "two actual Uvicorn HTTPS listeners; certificate verified",
+  "database": "PostgreSQL 17, isolated temporary schema",
+  "schema": "0006, poisoning signals over Memoria-aligned schema",
+  "catalog": "real published v1.0.0 aggregate metadata, registered before ingestion",
+  "flagged_requires_explicit_review": true,
+  "new_conflict_excludes_previously_accepted": true,
+  "reviewer_ack_restores_export_eligibility": true,
+  "duplicate_status": 409,
+  "unauthorized_review_statuses": [
+    401,
+    401,
+    401
+  ],
+  "pending_after_review": 1,
+  "exported_rows": 2,
+  "byte_reproducible": true,
+  "unmodified_model_reader": true,
+  "public_contract_excludes_review": true,
+  "manual_label_corrected": true,
+  "no_training_run": true,
+  "persisted_counts": {
+    "contributed_message": 4,
+    "message_label": 7,
+    "reviews": 3,
+    "risk_flags": 2
+  },
+  "migration_round_trip_and_no_drift": true
+}

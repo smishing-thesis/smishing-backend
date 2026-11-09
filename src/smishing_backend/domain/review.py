@@ -11,6 +11,7 @@ class ReviewDecision:
     decision: Decision
     reason: Reason
     label: Literal["safe", "smishing"]
+    acknowledge_flags: bool = False
 
 
 @dataclass(frozen=True)
@@ -28,3 +29,5 @@ class ReviewRepository(Protocol):
     def decide(
         self, contribution_id: UUID, reviewer_id: str, decision: ReviewDecision
     ) -> RegisteredReview: ...
+    def flagged(self, limit: int) -> list[dict]: ...
+    def acknowledge(self, contribution_id: UUID, reviewer_id: str) -> int: ...

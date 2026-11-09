@@ -2,7 +2,8 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import Engine, func, insert, select, update
 
-from smishing_backend.data.schema import contributions, labels, reviews
+from smishing_backend.data.repositories.poisoning import lock_risk_snapshot
+from smishing_backend.data.schema import contributions, labels, reviews, risk_flags
 from smishing_backend.domain.quarantine import InvalidTransition
 from smishing_backend.domain.review import RegisteredReview, ReviewDecision
 
@@ -32,6 +33,17 @@ class PostgresReviewRepository:
     ) -> RegisteredReview:
         review_id, label_id = uuid4(), uuid4()
         with self.engine.begin() as connection:
+            lock_risk_snapshot(connection)
+            unresolved = connection.scalar(
+                select(func.count())
+                .select_from(risk_flags)
+                .where(
+                    risk_flags.c.contribution_id == contribution_id,
+                    risk_flags.c.reviewed_at.is_(None),
+                )
+            )
+            if unresolved and not decision.acknowledge_flags:
+                raise InvalidTransition()
             reviewed_at = connection.execute(
                 update(contributions)
                 .where(
@@ -68,6 +80,19 @@ class PostgresReviewRepository:
                     reviewed_at=reviewed_at,
                 )
             )
+            if unresolved:
+                connection.execute(
+                    update(risk_flags)
+                    .where(
+                        risk_flags.c.contribution_id == contribution_id,
+                        risk_flags.c.reviewed_at.is_(None),
+                    )
+                    .values(
+                        reviewed_at=reviewed_at,
+                        reviewer_id=reviewer_id,
+                        review_decision=decision.decision,
+                    )
+                )
         return RegisteredReview(
             review_id,
             contribution_id,
@@ -76,3 +101,45 @@ class PostgresReviewRepository:
             reviewed_at,
             decision.label,
         )
+
+    def flagged(self, limit: int) -> list[dict]:
+        with self.engine.connect() as connection:
+            statement = (
+                select(
+                    contributions.c.id,
+                    contributions.c.text,
+                    contributions.c.status.label("status"),
+                    func.array_agg(risk_flags.c.code).label("signals"),
+                )
+                .join(risk_flags, risk_flags.c.contribution_id == contributions.c.id)
+                .where(risk_flags.c.reviewed_at.is_(None))
+                .group_by(contributions.c.id)
+                .order_by(contributions.c.received_at, contributions.c.id)
+                .limit(limit)
+            )
+            return [dict(row) for row in connection.execute(statement).mappings()]
+
+    def acknowledge(self, contribution_id: UUID, reviewer_id: str) -> int:
+        with self.engine.begin() as connection:
+            lock_risk_snapshot(connection)
+            status = connection.scalar(
+                select(contributions.c.status)
+                .where(contributions.c.id == contribution_id)
+                .with_for_update()
+            )
+            if status not in {"accepted", "rejected"}:
+                raise InvalidTransition()
+            changed = connection.execute(
+                update(risk_flags)
+                .where(
+                    risk_flags.c.contribution_id == contribution_id,
+                    risk_flags.c.reviewed_at.is_(None),
+                )
+                .values(
+                    reviewed_at=func.now(),
+                    reviewer_id=reviewer_id,
+                    review_decision="cleared",
+                )
+                .returning(risk_flags.c.id)
+            ).all()
+            return len(changed)
