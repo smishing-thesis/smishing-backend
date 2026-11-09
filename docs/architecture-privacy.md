@@ -196,7 +196,7 @@ Ruff, formato y tipos correctos. Controles sintéticos intercalados 0/20 y
 agrupados por clase 2/20 marcados: una limitación explícita, no una estimación
 poblacional. Ver docs/poisoning-signals.md y docs/evidence/poisoning-controls-2026-11-08.json.
 
-Verificación #17: 176 pruebas y dos subtests; retención sin tráfico y al arranque,
+Verificación #17: 177 pruebas y dos subtests; retención sin tráfico y al arranque,
 sin consola de aplicación, eventos permitidos y ausencia de eco aun al fallar
 el almacenamiento. Restauración 0006 con cifrado autenticado verificada en
 docs/evidence/backup-restore-2026-11-08.json. Condiciones de operación Azure

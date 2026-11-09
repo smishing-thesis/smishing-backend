@@ -37,6 +37,6 @@ Pruebas: solicitudes aceptada y rechazada reales sobre PostgreSQL sintético,
 búsqueda de texto, dirección de prueba y metadatos en archivo; excepción con
 texto no se imprime. Configuración de retención y mensajes de access log probados.
 Revisión de respaldo y restauración sobre el esquema 0006: [política y evidencia](backup-policy.md).
-176 pruebas y dos subtests con PostgreSQL real; Ruff, formato y mypy correctos.
+177 pruebas y dos subtests con PostgreSQL real; Ruff, formato y mypy correctos.
 Se prueba limpieza al arranque y sin eventos, cierre del hilo y error de disco
 sin imprimir el registro original. La revisión del backend no certifica Azure.

@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import subprocess
+import sys
 import threading
 import time
 from datetime import UTC, datetime, timedelta
@@ -160,3 +162,21 @@ def test_storage_failure_does_not_print_raw_record(tmp_path, capsys, monkeypatch
         assert "SYNTHETIC_PRIVATE" not in capsys.readouterr().err
     finally:
         handler.close()
+
+
+def test_supported_logging_configuration_writes_only_private_file(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from pathlib import Path; import logging, logging.config, sys; from smishing_backend.logging import logging_config; logging.config.dictConfig(logging_config(Path(sys.argv[1]))); logging.warning('SYNTHETIC_PRIVATE %s', '192.0.2.42'); logging.shutdown()",
+            str(tmp_path),
+        ],
+        capture_output=True,
+        check=True,
+        timeout=5,
+    )
+    assert result.stdout == result.stderr == b""
+    content = (tmp_path / "events.jsonl").read_text()
+    assert "SYNTHETIC_PRIVATE" not in content and "192.0.2.42" not in content
+    assert json.loads(content)["event"] == "runtime_event"
