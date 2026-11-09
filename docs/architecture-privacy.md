@@ -3,7 +3,8 @@
 Fuente central del equipo, revisada contra código el **8 de noviembre de 2026**.
 Describe lo existente y sus límites. La Figura 6 del Word proporcionado por el
 equipo se contrastó: [modelo físico y correcciones](thesis-schema-review.md).
-El acuerdo final del contrato Android sigue pendiente en #4.
+La definición y revisión entre repositorios de #4 se registran en
+[contrato y revisión](contract-review.md), bajo la autorización del responsable.
 
 ## Qué está integrado y qué está en revisión
 
@@ -118,7 +119,7 @@ Las etiquetas públicas propuestas son `safe` y `smishing`; el lector del modelo
 consume 0/1 en la exportación. La longitud de entrada del modelo no se confunde
 con el límite de almacenamiento del aporte.
 
-- [Contrato y revisión pendiente #4](https://github.com/smishing-thesis/smishing-backend/issues/4): Figura 6 contrastada y esquema corregido; falta registrar el acuerdo con el cliente Android sobre el contrato actualizado.
+- [Contrato y revisión #4](https://github.com/smishing-thesis/smishing-backend/issues/4): Figura 6 y datos del resultado Android contrastados; contrato adoptado por criterio delegado del responsable. No se afirma una prueba móvil de envío.
 - [Autenticación #6](https://github.com/smishing-thesis/smishing-backend/issues/6): el usuario comunicó el 8 de noviembre la aceptación del mecanismo API key. La clave es extraíble de Android y no prueba procedencia oficial. No se afirma una reunión o aceptación directa de terceros.
 - Rotación: añadir clave nueva por entorno, reiniciar, distribuir cliente y retirar
   la anterior de todos los procesos. Revisar en cada publicación del cliente y
