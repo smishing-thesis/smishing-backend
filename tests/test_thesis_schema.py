@@ -270,3 +270,36 @@ def test_operator_can_fill_legacy_reference_before_upgrade(
         assert conn.scalar(sa.select(sa.func.count()).select_from(model_versions)) == 1
     # Explicit preparation mode must fail closed on an already upgraded database.
     assert catalog.main() == 1
+
+
+@pytest.mark.parametrize(
+    "change", ["long_version", "long_training_set", "missing_metric", "invalid_metric"]
+)
+def test_incompatible_legacy_values_are_rejected_without_truncation(
+    empty_pg, published_metadata, change
+):
+    migrate(empty_pg, "0004")
+    old_model = sa.Table("model_versions", sa.MetaData(), autoload_with=empty_pg)
+    facts = asdict(parse_publication(*published_metadata))
+    if change == "long_version":
+        facts["version"] = "1.0.0-" + "x" * 16
+    elif change == "long_training_set":
+        facts["corpus_version"] = "x" * 101
+    elif change == "missing_metric":
+        del facts["metrics"]["validation"]["f1"]
+    else:
+        facts["metrics"]["validation"]["f1"] = 1.1
+    with empty_pg.begin() as conn:
+        conn.execute(sa.insert(old_model).values(id=uuid4(), **facts))
+    with pytest.raises(RuntimeError, match="Reconcile model publication"):
+        migrate(empty_pg)
+    with empty_pg.connect() as conn:
+        assert conn.scalar(sa.text("SELECT version_num FROM alembic_version")) == "0004"
+        assert (
+            conn.scalar(sa.text("SELECT version FROM model_versions"))
+            == facts["version"]
+        )
+        assert (
+            conn.scalar(sa.text("SELECT corpus_version FROM model_versions"))
+            == facts["corpus_version"]
+        )

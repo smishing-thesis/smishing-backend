@@ -182,6 +182,6 @@ por las heurísticas en esa muestra. No se reentrenó ni se probó producción.
 Este cambio documental no añade rutas, campos ni funcionalidades: conserva la
 distinción entre main, implementación en PR y operación todavía no verificada.
 
-Revalidación del modelo físico tras recibir el Word: 158 pruebas y dos subtests,
+Revalidación del modelo físico tras recibir el Word: 162 pruebas y dos subtests,
 PostgreSQL real, Ruff, formato y tipos correctos. El flujo HTTPS con catálogo
 previo y exportación se registra en docs/evidence/thesis-schema-flow-2026-11-08.json.

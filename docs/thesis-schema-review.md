@@ -105,7 +105,7 @@ siempre un respaldo y la compatibilidad del código antes de revertir en operaci
 
 ## Evidencia
 
-**158 pruebas y dos subtests**, PostgreSQL 17 real, Python 3.12. Ruff, formato y
+**162 pruebas y dos subtests**, PostgreSQL 17 real, Python 3.12. Ruff, formato y
 mypy correctos. `tests/test_thesis_schema.py` verifica nombres físicos, tipos,
 NOT NULL, PK, FK, unicidad, conservación de datos existentes en ambos sentidos,
 trigger de estados terminales después de cada cambio, rechazo seguro de catálogo
