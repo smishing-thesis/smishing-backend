@@ -51,3 +51,7 @@ def receive_contribution(
         raise ValueError("A contribution must have at least one label")
     assert_anonymized(contribution.text)
     return repository.save(contribution)
+
+
+class UnknownModelVersion(Exception):
+    """The device version has no publication registered by an operator."""

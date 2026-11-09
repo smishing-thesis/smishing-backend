@@ -2,8 +2,11 @@
 
 PostgreSQL 17 de prueba real, sin corpus ni credenciales reales.
 Estado físico: pending / accepted / rejected (pendiente / aceptado / rechazado).
-Tablas: contributions, labels y model_versions. La versión en la etiqueta es
-opcional para permitir otras fuentes futuras; la API v1 exige versión de modelo.
+Tablas del corpus: contributed_message, message_label y model_version.
+La versión es obligatoria para etiquetas de dispositivo y nula para manuales.
+reviews registra auditoría interna; alembic_version controla migraciones.
+La migración 0005 alinea nombres, tipos y campos obligatorios con la Figura 6
+de la Memoria: [contraste, extensiones y actualización](thesis-schema-review.md).
 El hash es SHA-256 hexadecimal único. No hay tablas de personas o dispositivos.
 Las fechas son de recepción del servidor, nunca fechas del SMS.
 

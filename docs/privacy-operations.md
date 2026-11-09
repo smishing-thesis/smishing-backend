@@ -16,8 +16,8 @@ de reiniciar. La retención de consola la debe limitar la plataforma a siete
 días; no se configura ni se afirma verificada infraestructura aún inexistente.
 Restringir permisos del directorio a 0750 y el acceso a operadores autorizados.
 
-Respaldos: solo las tablas del corpus contributions, labels y model_versions
-y metadatos de migración; nunca el entorno, credenciales, directorios de logs,
+Respaldos: base dedicada con contributed_message, message_label, model_version,
+auditoría reviews y metadatos de migración; nunca el entorno, credenciales, directorios de logs,
 archivos del dispositivo o corpus originales. El esquema almacena únicamente
 texto aportado anonimizado, etiqueta, versiones y revisión acotada; no hay
 campos de dispositivo, remitente o red. El hash y UUID son del aporte, no del

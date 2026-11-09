@@ -56,7 +56,7 @@ def parse_publication(
         if (
             not isinstance(version, str)
             or not VERSION.fullmatch(version)
-            or len(version) > 64
+            or len(version) > 20
         ):
             raise ValueError
         tag = release["tag_name"]
@@ -83,7 +83,7 @@ def parse_publication(
             raise ValueError
         corpus = training["corpus_version"]
         if not isinstance(corpus, str) or not re.fullmatch(
-            r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", corpus
+            r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}", corpus
         ):
             raise ValueError
         parameters = {key: training["hyperparameters"][key] for key in HYPERPARAMETERS}
@@ -115,6 +115,11 @@ def parse_publication(
         if any(
             isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0
             for v in numbers
+        ):
+            raise ValueError
+        if any(
+            not 0 <= metrics["validation"][key] <= 1
+            for key in ("accuracy", "precision", "recall", "f1")
         ):
             raise ValueError
         # Do not persist dataset_path, training history, robustness-suite SMS or unknown fields.
@@ -171,7 +176,7 @@ def _gh_json(endpoint: str, asset: bool = False) -> dict:
 
 
 def read_github_publication(tag: str) -> ModelPublication:
-    if not tag.startswith("v") or not VERSION.fullmatch(tag[1:]) or len(tag) > 64:
+    if not tag.startswith("v") or not VERSION.fullmatch(tag[1:]) or len(tag) > 21:
         raise InvalidModelPublication("Invalid release tag")
     release = _gh_json(f"repos/{MODEL_REPOSITORY}/releases/tags/{tag}")
     assets = {}
