@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import uuid4
 
-from sqlalchemy import Engine, func, select, text
+from sqlalchemy import Engine, func, select, text, true
 from sqlalchemy.dialects.postgresql import insert
 
 from smishing_backend.data.repositories.contributions import (
@@ -82,6 +82,13 @@ class RiskAwareContributionRepository(PostgresContributionRepository):
     def _store_new(
         self, connection, contribution: NewContribution
     ) -> SavedContribution:
+        codes = self.assess_on_connection(connection, contribution)
+        saved = self._save_on_connection(connection, contribution)
+        for code in codes:
+            flag_content(connection, saved.id, code)
+        return saved
+
+    def assess_on_connection(self, connection, contribution, exclude=None):
         now = connection.execute(select(func.now())).scalar_one()
         split = now - timedelta(seconds=self.policy.window_seconds)
         rows = connection.execute(
@@ -89,6 +96,7 @@ class RiskAwareContributionRepository(PostgresContributionRepository):
             .join(labels, labels.c.contribution_id == contributions.c.id)
             .where(
                 labels.c.origin == "device",
+                contributions.c.id != exclude if exclude is not None else true(),
                 contributions.c.received_at
                 >= split - timedelta(seconds=self.policy.window_seconds),
             )
@@ -105,17 +113,13 @@ class RiskAwareContributionRepository(PostgresContributionRepository):
             for row in rows
             if row.received_at < split
         ]
-        codes = assess(
+        return assess(
             contribution.text,
             contribution.labels[0].value,
             recent,
             baseline,
             self.policy,
         )
-        saved = self._save_on_connection(connection, contribution)
-        for code in codes:
-            flag_content(connection, saved.id, code)
-        return saved
 
     def save(self, contribution: NewContribution) -> SavedContribution:
         try:

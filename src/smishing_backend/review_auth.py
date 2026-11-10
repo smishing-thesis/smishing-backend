@@ -35,12 +35,20 @@ def validate_review_credentials(settings: ReviewSettings, public: Settings) -> N
 
 
 class ReviewGate:
-    def __init__(self, app, credentials: dict[str, SecretStr]):
+    def __init__(
+        self,
+        app,
+        credentials: dict[str, SecretStr],
+        prefixes=("/reviews",),
+        max_body=2048,
+    ):
         self.app = app
         self.credentials = credentials
+        self.prefixes = prefixes
+        self.max_body = max_body
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or not scope["path"].startswith("/reviews"):
+        if scope["type"] != "http" or not scope["path"].startswith(self.prefixes):
             return await self.app(scope, receive, send)
         headers = [
             value.decode("latin-1")
@@ -82,7 +90,7 @@ class ReviewGate:
             message = await receive()
             if message["type"] == "http.request":
                 consumed += len(message.get("body", b""))
-                if consumed > 2048:
+                if consumed > self.max_body:
                     raise HTTPException(413)
             return message
 

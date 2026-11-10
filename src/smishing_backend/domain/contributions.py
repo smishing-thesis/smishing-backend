@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
+from smishing_backend.domain.entity import Entity
 from smishing_backend.domain.privacy import assert_anonymized
 
 
@@ -34,8 +35,7 @@ class NewContribution:
 
 
 @dataclass(frozen=True)
-class SavedContribution:
-    id: UUID
+class SavedContribution(Entity):
     status: Literal["pending"]
     received_at: datetime
 
