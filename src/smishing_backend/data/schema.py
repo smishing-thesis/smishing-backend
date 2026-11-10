@@ -3,11 +3,13 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
+from smishing_backend.data.entity import EntityBase
+
 metadata = sa.MetaData()
 model_versions = sa.Table(
     "model_version",
     metadata,
-    sa.Column("id", sa.Uuid(), primary_key=True),
+    EntityBase.primary_key(),
     sa.Column("version_tag", sa.String(20), key="version", nullable=False, unique=True),
     sa.Column(
         "generated_at", sa.DateTime(timezone=True), key="trained_at", nullable=False
@@ -32,14 +34,9 @@ model_versions = sa.Table(
 contributions = sa.Table(
     "contributed_message",
     metadata,
-    sa.Column("id", sa.Uuid(), primary_key=True),
+    EntityBase.primary_key(),
     sa.Column("text", sa.Text(), nullable=False),
-    sa.Column(
-        "received_at",
-        sa.DateTime(timezone=True),
-        nullable=False,
-        server_default=sa.func.now(),
-    ),
+    EntityBase.timestamp("received_at", server_time=True),
     sa.Column("content_hash", sa.CHAR(64), nullable=False),
     sa.Column(
         "review_status",
@@ -68,7 +65,7 @@ contributions = sa.Table(
 labels = sa.Table(
     "message_label",
     metadata,
-    sa.Column("id", sa.Uuid(), primary_key=True),
+    EntityBase.primary_key(),
     sa.Column(
         "message_id",
         sa.Uuid(),
@@ -83,12 +80,7 @@ labels = sa.Table(
     sa.Column(
         "source", sa.String(20), key="origin", nullable=False, server_default="device"
     ),
-    sa.Column(
-        "created_at",
-        sa.DateTime(timezone=True),
-        nullable=False,
-        server_default=sa.func.now(),
-    ),
+    EntityBase.timestamp("created_at", server_time=True),
     sa.CheckConstraint(
         "(source = 'device' AND model_version_id IS NOT NULL) OR (source = 'manual' AND model_version_id IS NULL)",
         name="ck_label_provenance",
@@ -103,7 +95,7 @@ labels = sa.Table(
 reviews = sa.Table(
     "reviews",
     metadata,
-    sa.Column("id", sa.Uuid(), primary_key=True),
+    EntityBase.primary_key(),
     sa.Column(
         "contribution_id",
         sa.Uuid(),
@@ -137,7 +129,7 @@ reviews = sa.Table(
 risk_flags = sa.Table(
     "risk_flags",
     metadata,
-    sa.Column("id", sa.Uuid(), primary_key=True),
+    EntityBase.primary_key(),
     sa.Column(
         "contribution_id",
         sa.Uuid(),

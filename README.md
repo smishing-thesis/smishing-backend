@@ -65,6 +65,12 @@ clave Android extraíble no demuestra procedencia oficial. El modelo spaCy de
 nombres se instala desde dependencia bloqueada; requiere memoria y no se descarga
 al arrancar. No hay endpoints públicos de revisión, exportación ni entrenamiento.
 
+## Administración del corpus
+
+[CRUD y entidad base (#46)](docs/administration.md): Swagger administrativo
+en https://127.0.0.1:8445/docs, con credenciales propias. Incluye GET, POST,
+PUT, PATCH y DELETE de aportes, etiquetas y versiones.
+
 ## Diseño y operación
 
 API y servicios componen casos de uso; dominio define reglas/puertos sin FastAPI

@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Literal, Protocol
 from uuid import UUID
 
+from smishing_backend.domain.entity import Entity
 from smishing_backend.domain.quarantine import Decision, Reason
 
 
@@ -15,8 +16,7 @@ class ReviewDecision:
 
 
 @dataclass(frozen=True)
-class RegisteredReview:
-    id: UUID
+class RegisteredReview(Entity):
     contribution_id: UUID
     reviewer_id: str
     decision: Decision

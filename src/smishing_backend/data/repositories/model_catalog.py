@@ -13,25 +13,30 @@ from smishing_backend.domain.model_catalog import (
 )
 
 
+def publication_values(publication: ModelPublication) -> dict:
+    values = asdict(publication)
+    values["hyperparameters"] = json.dumps(
+        values["hyperparameters"],
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    scores = publication.metrics["validation"]
+    values.update(
+        accuracy=scores["accuracy"],
+        precision_score=scores["precision"],
+        recall=scores["recall"],
+        f1_score=scores["f1"],
+    )
+    return values
+
+
 class PostgresModelCatalog:
     def __init__(self, engine: Engine):
         self.engine = engine
 
     def register(self, publication: ModelPublication) -> UUID:
-        values = asdict(publication)
-        values["hyperparameters"] = json.dumps(
-            values["hyperparameters"],
-            sort_keys=True,
-            separators=(",", ":"),
-            allow_nan=False,
-        )
-        scores = publication.metrics["validation"]
-        values.update(
-            accuracy=scores["accuracy"],
-            precision_score=scores["precision"],
-            recall=scores["recall"],
-            f1_score=scores["f1"],
-        )
+        values = publication_values(publication)
         with self.engine.begin() as connection:
             connection.execute(
                 insert(model_versions)
