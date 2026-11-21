@@ -90,3 +90,62 @@ Revalidación local: ambas pruebas pasaron. No cambió el contrato ni el runtime
 con este documento; se registra la revisión y se elimina un bloqueo de aprobación
 adicional que no era exigido por la historia. La CI completa del repositorio
 continúa comprobando contrato, validación y persistencia con SMS sintéticos.
+
+## Lote de aportes — #48
+
+Decisión técnica del backend, tomada tras leer docs/contrato-con-el-backend.md de
+smishing-mobile-app (#72). La Memoria no fija la forma HTTP del envío ni dice
+nada sobre lotes: describe un aporte por mensaje analizado, con autenticación,
+validación, verificación de anonimización, deduplicación y cuarentena en el
+backend. El lote conserva esa cadena de filtros aporte por aporte. No es una
+cita del Word. Nadie consume todavía el contrato v1, por lo que el cambio es
+aditivo; la versión del contrato pasa a 1.1.0.
+
+POST /api/v1/contributions/batch, HTTPS, X-API-Key, application/json UTF-8:
+
+    {"contributions": [{"text": "...", "label": "smishing", "model_version": "1.0.0"}]}
+
+De 1 a 20 aportes (maxItems en el OpenAPI; la app debe leerlo de ahí) y 327680
+bytes de cuerpo. Respuesta 200 con un resultado por aporte, en el mismo orden:
+
+    {"results": [{"index": 0, "status": "accepted"},
+                 {"index": 1, "status": "duplicate"},
+                 {"index": 2, "status": "rejected", "reason": "not_anonymized"}]}
+
+- accepted: guardado como pending. La respuesta no incluye ids.
+- duplicate: ese contenido ya existe (o se repitió en el lote). No revela su
+  estado de revisión; es lo mismo que el 409 del aporte único. La app lo saca de
+  la cola. Reenviar un lote es seguro: lo ya guardado vuelve como duplicate.
+- rejected con reason not_anonymized, unknown_model_version o
+  invalid_contribution: la app lo descarta y no lo reintenta. El motivo nunca
+  repite el texto ni el valor recibido.
+- Atomicidad por aporte. Un fallo de almacenamiento da 503 para todo el lote y
+  deja guardados los aportes anteriores; al reintentar vuelven como duplicate.
+- Errores del lote entero, con el mismo formato genérico: 400 (transporte, JSON,
+  UTF-8), 401, 413, 422 (sobre mal formado o fuera de 1 a 20), 429 con
+  Retry-After y 503. No existe 409: el duplicado se informa por aporte.
+- Cuota: cuenta aportes, no solicitudes (ver rate-limit.md). La app asumía que un
+  lote contaba como una solicitud; con ese criterio un par de red podría enviar
+  1200 aportes por minuto, el doble del límite global.
+
+Decisiones sobre lo que pedía la app:
+
+- anonymization_version no se acepta en v1. El backend reverifica cada aporte con
+  sus propias reglas, la Memoria no define el campo y guardarlo exigiría una
+  migración sin que ninguna lógica lo use. Con campos extra prohibidos, la app
+  no debe enviarlo. Si más adelante hace falta, se añade acordándolo con la app.
+- El máximo de 20 es fijo en v1, no configurable por entorno, para que el
+  OpenAPI sea la única fuente que lee la app.
+- Aportes safe: el backend sigue aceptando safe y smishing. Que la app solo envíe
+  riesgo alto (siempre smishing) es decisión de la app y de la tesis. Un corpus
+  solo con positivos que el modelo ya marcó no permite construir el conjunto de
+  prueba confiable que la Memoria exige para distinguir etiquetas automáticas de
+  verificadas; conviene decidirlo antes de implementar el cliente.
+- 401: ya es inequívoco (código unauthorized). La app debe dejar de reintentar.
+  Rotación: el backend admite varias claves a la vez; ver authentication.md. La
+  distribución entre versiones de la app sigue pendiente de acuerdo operativo.
+
+Verificación: tests/test_batch_validation.py (sin base de datos) y
+tests/test_batch_api.py (PostgreSQL real) con mensajes sintéticos. El snapshot
+docs/openapi-v1.json y el OpenAPI de la aplicación funcional se comparan en
+ambas rutas. No hay prueba con el cliente Android, que aún no existe.

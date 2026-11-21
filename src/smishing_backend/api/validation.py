@@ -8,6 +8,8 @@ from pydantic import ValidationError
 
 from smishing_backend.api.contracts import (
     ERRORS,
+    MAX_BATCH_BODY_BYTES,
+    MAX_BATCH_ITEMS,
     MAX_BODY_BYTES,
     ContributionInput,
 )
@@ -29,7 +31,8 @@ def unique_object(pairs: list[tuple[str, object]]) -> dict:
     return result
 
 
-async def validate_contribution(request: Request) -> ContributionInput:
+async def read_json(request: Request, limit: int) -> object:
+    """Check the media type and read at most `limit` bytes as strict UTF-8 JSON."""
     if len(request.headers.getlist("content-type")) != 1:
         raise fail(400)
     media = Message()
@@ -46,28 +49,50 @@ async def validate_contribution(request: Request) -> ContributionInput:
         raise fail(400)
     body = bytearray()
     async for chunk in request.stream():
-        if len(body) + len(chunk) > MAX_BODY_BYTES:
+        if len(body) + len(chunk) > limit:
             raise fail(413)
         body.extend(chunk)
     try:
-        raw = json.loads(
+        return json.loads(
             body.decode("utf-8", errors="strict"),
             object_pairs_hook=unique_object,
             parse_constant=lambda _: (_ for _ in ()).throw(ValueError("JSON constant")),
         )
     except (UnicodeError, ValueError, RecursionError):
         raise fail(400) from None
+
+
+def parse_contribution(raw: object) -> ContributionInput | None:
+    """Return the contribution, or None when it breaks the contract."""
     # Normalize before checking character limits and hashing, but reject surrogates.
     if isinstance(raw, dict) and isinstance(raw.get("text"), str):
         try:
             raw["text"].encode("utf-8", errors="strict")
         except UnicodeError:
-            raise fail(422) from None
+            return None
         raw["text"] = normalize_text(raw["text"])
     try:
         return ContributionInput.model_validate(raw)
     except ValidationError:
-        raise fail(422) from None
+        return None
+
+
+async def validate_contribution(request: Request) -> ContributionInput:
+    contribution = parse_contribution(await read_json(request, MAX_BODY_BYTES))
+    if contribution is None:
+        raise fail(422)
+    return contribution
+
+
+async def read_batch(request: Request) -> list[object]:
+    """Read the batch envelope; each item is validated separately afterwards."""
+    raw = await read_json(request, MAX_BATCH_BODY_BYTES)
+    if not isinstance(raw, dict) or set(raw) != {"contributions"}:
+        raise fail(422)
+    items = raw["contributions"]
+    if not isinstance(items, list) or not 1 <= len(items) <= MAX_BATCH_ITEMS:
+        raise fail(422)
+    return items
 
 
 async def contribution_error_handler(request: Request, exc: Exception):

@@ -15,3 +15,12 @@ un hash y no representa recepción ni almacenamiento. Todos los errores de
 validación tienen código/mensaje genéricos, sin input, contexto ni excepciones.
 La integración debe registrar contribution_error_handler y usar esta dependencia.
 Los límites siguen siendo la propuesta del contrato #4 pendiente de acuerdo móvil.
+
+## Lote — #48
+
+El lote usa el mismo transporte que el aporte único (JSON UTF-8 estricto, sin
+compresión ni claves repetidas) con un límite de 327680 bytes de cuerpo, es decir
+20 × 16384. El sobre debe ser exactamente {"contributions": [...]} con 1 a 20
+elementos; si no, 422 para todo el lote. Cada elemento se valida por separado
+con las reglas del aporte único (NFC, límites, sustitutos, campos extra); uno
+inválido no afecta a los demás y se informa como rejected/invalid_contribution.

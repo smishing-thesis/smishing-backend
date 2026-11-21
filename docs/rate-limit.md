@@ -20,3 +20,14 @@ No desplegar con múltiples réplicas sin un contador global compartido con TTL 
 la misma política de privacidad. No se simula Redis ni una cuota distribuida.
 Las pruebas verifican concurrencia, expiración automática, privacidad de logs
 y 429 antes del cuerpo. Integración en la ruta persistente pendiente de #1.
+
+## Cuota por aporte en el lote — #48
+
+POST /api/v1/contributions/batch cuenta aportes, no solicitudes: un lote de N
+aportes consume N unidades del cupo por par de red y del global. Se toma una
+unidad antes de leer el cuerpo, para que una avalancha de cuerpos inválidos siga
+limitada, y las N-1 restantes en cuanto se conoce el tamaño del lote. admit toma
+todas las unidades o ninguna: si no caben, todo el lote recibe 429 con
+Retry-After, sin guardar nada. La unidad inicial ya consumida no se devuelve.
+Con los valores propuestos (60 y 600 por minuto) caben tres lotes completos por
+minuto por par de red y 30 en total por proceso. Sigue siendo por proceso.
