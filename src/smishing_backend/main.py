@@ -55,7 +55,7 @@ def create_app(
             if engine is not None:
                 engine.dispose()
 
-    app = CorpusFastAPI(title="Smishing Backend", version="1.0.0", lifespan=lifespan)
+    app = CorpusFastAPI(title="Smishing Backend", version="1.1.0", lifespan=lifespan)
     app.state.settings = configured
     app.include_router(health_router)
     app.include_router(contribution_router)

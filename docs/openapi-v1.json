@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Smishing Backend",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/api/v1/contributions": {
@@ -158,10 +158,183 @@
           }
         ]
       }
+    },
+    "/api/v1/contributions/batch": {
+      "post": {
+        "summary": "Contribute Batch",
+        "description": "Hasta 20 aportes optativos ya anonimizados por solicitud, con un resultado por aporte (accepted, duplicate o rejected con un motivo genérico) en el mismo orden. Cada aporte se procesa por separado: uno rechazado no afecta a los demás y un duplicado indica que reenviar es seguro. La cuota cuenta aportes, no solicitudes. Máximo 327680 bytes de cuerpo JSON UTF-8; cada texto de 1 a 2048 puntos Unicode tras normalización. Un error de almacenamiento (503) afecta a todo el lote: reenviarlo es seguro.",
+        "operationId": "contribute_batch_api_v1_contributions_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionBatchInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionBatchResult"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio no disponible.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "service_unavailable",
+                    "message": "Servicio no disponible."
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Se requiere JSON UTF-8 válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "invalid_request",
+                    "message": "Se requiere JSON UTF-8 válido."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente o inválida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "unauthorized",
+                    "message": "Credencial ausente o inválida."
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "El cuerpo supera el límite permitido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "body_too_large",
+                    "message": "El cuerpo supera el límite permitido."
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El aporte no cumple el contrato.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "invalid_contribution",
+                    "message": "El aporte no cumple el contrato."
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Límite temporal de aportes excedido.",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1.0
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "rate_limited",
+                    "message": "Límite temporal de aportes excedido."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "ContributionBatchInput": {
+        "properties": {
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/ContributionInput"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Contributions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contributions"
+        ],
+        "title": "ContributionBatchInput"
+      },
+      "ContributionBatchResult": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ContributionResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ContributionBatchResult"
+      },
       "ContributionCreated": {
         "properties": {
           "id": {
@@ -213,6 +386,48 @@
           "model_version"
         ],
         "title": "ContributionInput"
+      },
+      "ContributionResult": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "exclusiveMaximum": 20.0,
+            "minimum": 0.0,
+            "title": "Index"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted",
+              "duplicate",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "not_anonymized",
+                  "unknown_model_version",
+                  "invalid_contribution"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "status"
+        ],
+        "title": "ContributionResult",
+        "description": "Outcome of one contribution; never carries ids, text or received values."
       },
       "ErrorDetail": {
         "properties": {
