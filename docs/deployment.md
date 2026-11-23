@@ -105,7 +105,8 @@ puede tener otras apps.
    /home/site/wwwroot` y los mismos comandos); **ese camino no se ha probado**.
 4. Comprobar `GET /health`, `/docs` y `/openapi.json` por HTTPS, y enviar un aporte
    sintético con la clave de la app: debe responder 201 con `status: pending`.
-   La primera respuesta tras un periodo de inactividad tardó unos 78 s.
+   La primera respuesta tras el despliegue tardó unos 78 s; los reinicios posteriores
+   tardaron bastante más (ver Riesgos).
 
 ## Riesgos conocidos con el plan Free (F1)
 
@@ -114,12 +115,28 @@ puede tener otras apps.
   "la base de datos no es accesible desde internet" con este plan. Lo más cercano sería
   una base con acceso público limitado por firewall, y eso no equivale a lo pedido.
 - **Sin Always On:** la app se duerme tras inactividad y la primera solicitud es lenta,
-  más con la carga del modelo de spaCy al arrancar: **unos 78 s** en la primera
-  solicitud tras el despliegue (una sola medición; no se midió un segundo arranque en
-  frío). El cliente móvil debe usar tiempos de espera generosos y reintentar. El
-  límite de Azure para arrancar es de unos 230 s por defecto y no se superó.
-- **1 GB de memoria y cuota diaria de CPU:** el modelo de spaCy cabió y la app
-  respondió, pero no se ha medido el consumo ni cuánto dura la cuota con tráfico real.
+  más con la carga del modelo de spaCy al arrancar. Mediciones del 23-11-2026: la
+  primera solicitud tras el despliegue tardó unos 78 s, pero dos reinicios posteriores
+  tardaron **195 s y 207 s** en pasar la prueba de arranque de Azure. El límite por
+  defecto es de unos 230 s: hay poco margen y no se ha comprobado cuánto varía. El
+  cliente móvil debe usar tiempos de espera generosos y reintentar.
+- **Plan compartido con otra app.** `smishy-backend` usa el plan
+  `ASP-UPCEstrellados-ab3a`, que está en el grupo `UPC-Estrellados` y lo comparte con
+  `restyle-web-services` (otro proyecto). La cuota diaria de CPU y la memoria del plan
+  Free son comunes: si esa app se enciende, nos quita cuota. Borrar el grupo
+  `UPC-Estrellados` o ese plan dejaría esta app sin plan. Conviene moverla a un plan
+  propio cuando haya presupuesto.
+- **Cada reinicio gasta CPU de la cuota diaria** (60 minutos en F1) por la carga de
+  spaCy: evitar reinicios innecesarios. No se ha medido cuántos caben al día.
+- **1 GB de memoria:** el modelo de spaCy cabió y la app respondió, pero no se ha medido
+  el consumo con tráfico real.
+- **La clave por `http://` se expone.** Azure redirige `http://` a `https://` (301)
+  sin procesar la solicitud, pero un cliente que mande la clave por HTTP ya la dejó en
+  claro antes de la redirección. La app móvil debe usar siempre `https://`.
+- **Sin registros de la plataforma** (apagados a propósito para que no queden URL, IP ni
+  cuerpos), el diagnóstico de fallos de arranque depende de los registros de despliegue
+  (`az webapp log download`). Para diagnosticar otra cosa habría que activarlos de
+  forma temporal y apagarlos después.
 - **La base de datos es pública.** Está en Render, accesible desde internet y
   protegida solo por contraseña y TLS (`sslmode=require`). Las bases gratuitas de
   Render pueden caducar: revisar la fecha en su panel. Cambiar de base solo exige
@@ -131,7 +148,12 @@ puede tener otras apps.
 
 - [x] HTTPS responde y HTTP redirige con 301 (comprobado desde fuera el 23-11-2026
   sobre el App Service vacío).
-- [x] TLS mínimo 1.2 configurado (informado por el equipo; no verificado aquí).
+- [x] TLS mínimo 1.2 en la app y en el sitio de administración (consultado con la CLI
+  el 23-11-2026). Desde fuera, TLS 1.2 y 1.3 responden 200 y TLS 1.1 no completa el
+  apretón de manos (salida 35 de curl; no distingue si lo rechaza Azure o si el curl
+  local no soporta 1.1).
+- [x] Una solicitud `http://` se redirige con 301 a `https://`, tanto `GET` como `POST`,
+  sin procesarla (probado el 23-11-2026 con una clave falsa).
 - [x] El backend desplegado responde `/health`, `/docs` y `/openapi.json` con 200
   (23-11-2026).
 - [x] Un aporte sintético individual con clave responde 201 `pending` por HTTPS: la
@@ -144,8 +166,28 @@ puede tener otras apps.
   externo y contra la base de Render, no desde la consola de la app.
 - [x] `SMISHING_DATABASE_URL` y `SMISHING_API_KEY` están como ajustes de la app, fuera
   del repositorio (comprobado el formato de la URL sin mostrar el valor).
-- [ ] Rotar la clave sin cambiar código (`SMISHING_API_KEYS`): no probado.
-- [ ] Secretos fuera de los logs.
-- [ ] Registros de la plataforma revisados.
+- [x] Rotar la clave sin cambiar código: se reemplazó `SMISHING_API_KEY` por una clave
+  nueva en el portal. Tras reiniciar la app, la clave nueva responde 422 (autenticada,
+  cuerpo vacío a propósito para no guardar aportes) y una clave falsa responde 401;
+  solo existe un ajuste de clave. **No se probó que la clave anterior concreta esté
+  rechazada**, porque no se conservaba: es una consecuencia de que ya no esté
+  configurada, no una comprobación. **Observado una vez:** justo después de guardar el
+  ajuste, la app siguió respondiendo 401 a la clave nueva (con el valor ya correcto en
+  Azure) y solo la aceptó tras un reinicio manual; no se identificó la causa. Tras
+  rotar, comprobar con una solicitud y reiniciar si no surte efecto.
+- [ ] Rotación con solapamiento (`SMISHING_API_KEYS` junto a `SMISHING_API_KEY`, para no
+  cortar a clientes con la clave anterior): el código la soporta, no se probó en Azure.
+- [x] Configuración del recurso consultada con la CLI el 23-11-2026: solo HTTPS, FTPS
+  únicamente, autenticación básica de FTP y SCM desactivada, CORS vacío, depuración
+  remota apagada, sin Application Insights ni ajustes de diagnóstico de Azure Monitor.
+- [x] Registros de la plataforma revisados: registros de aplicación, de servidor web,
+  errores detallados y trazas de solicitudes fallidas, todos apagados.
+- [x] Sin secretos en el repositorio: la clave de prueba usada antes no aparece en el
+  historial ni hay hosts de Render ni URLs de base con contraseña real; solo la
+  contraseña sintética de la CI y marcadores de ejemplo en este documento. Búsqueda por
+  patrones, no una auditoría exhaustiva.
+- [ ] Secretos fuera de los logs de la aplicación: el código no registra mensajes ni
+  claves (regla del proyecto), pero no se revisó un registro real porque la plataforma
+  no guarda ninguno.
 - [ ] Base de datos sin acceso desde internet (**no alcanzable con el plan Free**).
 - [ ] Revisión (8444) y administración (8445) no expuestas: no desplegar esos runners.
