@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = Field(default=60, ge=1)
     api_key: SecretStr | None = None
     api_keys: list[SecretStr] = Field(default_factory=list)
+    # True only behind a proxy that terminates TLS (Azure App Service); docs/deployment.md.
+    behind_tls_proxy: bool = False
     global_rate_limit_per_minute: int = Field(default=600, ge=1)
     poison_window_seconds: int = Field(default=300, ge=1, le=3600)
     poison_history_limit: int = Field(default=500, ge=30, le=2000)

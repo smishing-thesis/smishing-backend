@@ -82,6 +82,7 @@ texto anonimizado, etiqueta, versión y revisión, sin campos de persona/disposi
 - [Autenticación](docs/authentication.md), [cuotas](docs/rate-limit.md) y [API](docs/contribution-api.md).
 - [Duplicados](docs/deduplication.md), [anonimización y límites](docs/anonymization.md) y [cuarentena](docs/quarantine.md).
 - [Logs y respaldos](docs/privacy-operations.md) y [CI](docs/ci.md).
+- [Despliegue en Azure App Service (#19, #20)](docs/deployment.md).
 - [Origen de etiquetas y catálogo del modelo (#15)](docs/label-provenance.md).
 - [Revisión interna protegida (#13)](docs/protected-review.md).
 - [Señales de posible envenenamiento (#14)](docs/poisoning-signals.md).
