@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from smishing_backend.api.contracts import contract_app
 from smishing_backend.api.contributions import router as contribution_router
 from smishing_backend.api.health import router as health_router
+from smishing_backend.api.proxy import ForwardedProto
 from smishing_backend.api.rate_limit import RateLimiter
 from smishing_backend.api.validation import contribution_error_handler
 from smishing_backend.config import Settings
@@ -45,8 +46,15 @@ def create_app(
             )
         else:
             app.state.repository = repository
+        # Behind the proxy every request comes from the same immediate peer, so the
+        # per-network quota would be the global one anyway; make that explicit.
+        per_network = (
+            configured.global_rate_limit_per_minute
+            if configured.behind_tls_proxy
+            else configured.rate_limit_per_minute
+        )
         app.state.rate_limiter = RateLimiter(
-            configured.rate_limit_per_minute, configured.global_rate_limit_per_minute
+            per_network, configured.global_rate_limit_per_minute
         )
         try:
             yield
@@ -57,6 +65,8 @@ def create_app(
 
     app = CorpusFastAPI(title="Smishing Backend", version="1.1.0", lifespan=lifespan)
     app.state.settings = configured
+    if configured.behind_tls_proxy:
+        app.add_middleware(ForwardedProto)
     app.include_router(health_router)
     app.include_router(contribution_router)
     app.add_exception_handler(HTTPException, contribution_error_handler)
