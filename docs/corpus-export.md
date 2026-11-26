@@ -1,6 +1,6 @@
 # Hito #16: exportación reproducible del corpus aceptado
 
-Comando para un operador con acceso a la base, sin endpoint público de descarga:
+Comando para un operador con acceso a la base:
 
 ```sh
 uv run --locked python -m smishing_backend.export_corpus --output-dir exports
@@ -26,7 +26,7 @@ CSV UTF-8, salto de línea LF y comillas estándar:
 | text | Texto anonimizado, conservado exactamente |
 | label | 0 para safe/legítimo; 1 para smishing |
 | label_origin | manual o device |
-| model_version | Versión de la etiqueta automática; vacío si la elegida es manual |
+| model_version | Versión de la app que originó el aporte, aunque se elija la etiqueta manual |
 | corpus_version | backend- seguido del SHA-256 canónico del contenido |
 
 El lector real `smishing_charcnn.data.sources.load_local_legit_corpus` ya acepta
@@ -77,3 +77,41 @@ y una segunda exportación produjo exactamente los mismos bytes.
 El PR #40 tiene base main; no se ha desplegado ni entrenado un modelo.
 Las señales de envenenamiento específicas son la historia #14, no se simulan
 por el hecho de que un aporte tenga revisión manual.
+
+
+## Descargar el corpus final desde el Swagger — #56
+
+`GET /api/v1/admin/corpus/accepted.csv` aparece en «Corpus final» del Swagger
+principal. Exige HTTPS y el Bearer de administración de #54. La respuesta lleva
+`Cache-Control: no-store` y se construye en memoria, sin archivo en el servidor.
+
+La selección HTTP exige estado accepted, una revisión registrada cuya decisión
+es accepted, la etiqueta manual enlazada a esa revisión, una versión automática
+de origen válida y ausencia de alertas sin revisar. Ausencia de registros
+elegibles produce un CSV con solo cabecera. `X-Corpus-Excluded` cuenta aportes
+accepted que no son elegibles, incluidos los históricos sin revisión manual
+atribuida y los que tienen alertas pendientes. Pending y rejected nunca se
+exportan ni forman parte de ese conteo. `X-Corpus-Excluded-Unreviewed` informa aparte cuántos de los excluidos carecen de una revisión aceptada y atribuida.
+
+La respuesta informa `X-Corpus-Rows`, `X-Corpus-Version` y `X-Corpus-Date`.
+El nombre es `corpus-AAAA-MM-DD-backend-<huella>.csv`. La fecha es UTC y queda
+solo en las cabeceras. Los mismos datos producen los mismos bytes, aunque la
+consulta devuelva distinto orden o cambie la fecha del archivo.
+Más de 500 filas elegibles devuelve 413 sin entregar un corpus parcial. Es el
+límite inicial de esta descarga para el entorno Free. Si el corpus crece, se
+debe revisar el consumo y evaluar streaming antes de ampliar el límite.
+
+El CLI conserva su selección de aportes aceptados, priorizando etiqueta manual
+con fallback a la automática. Comparte exactamente la generación del CSV con
+el endpoint. Ambos ahora rellenan `model_version` desde la etiqueta automática
+de origen, lo que cambia la huella de nuevas exportaciones que antes tenían
+esa celda vacía. La etiqueta manual sigue sin versión propia en PostgreSQL.
+La descarga HTTP filtra más estrictamente que el CLI. Evita abrir el CSV en
+una hoja de cálculo con fórmulas habilitadas; se entrega para el lector del
+modelo y conserva el texto tal cual.
+
+Para el video, revisa dos aportes sintéticos con etiquetas finales distintas,
+deja uno pendiente y rechaza otro. Descarga desde Swagger dos veces. Muestra
+el conteo, nombre, fechas y huella, y que el lector fijado carga ambas clases.
+
+[Ensayo HTTPS e interfaz Swagger en Chromium](https://github.com/smishing-thesis/smishing-backend/actions/runs/45766490819): dos filas revisadas, huella y bytes iguales en dos descargas y verificación de la versión del modelo. Datos sintéticos en PostgreSQL 17. Verificación Azure pendiente.

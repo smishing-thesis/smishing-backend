@@ -110,7 +110,7 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
     La exclusión de alertas se aplica también a aportes aceptados previamente.
 
 Errores públicos nunca contienen el SMS ni los valores rechazados. La revisión en la API principal aparece en Swagger bajo su prefijo
-administrativo y queda fuera del contrato móvil. No hay endpoint público de descarga.
+administrativo y queda fuera del contrato móvil. El corpus final se descarga por HTTPS desde la ruta administrativa de la API principal, con Bearer propio y no-store. El contrato móvil no incluye la descarga.
 
 ## Contrato y decisiones de diseño
 

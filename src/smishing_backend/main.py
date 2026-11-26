@@ -14,6 +14,7 @@ from smishing_backend.api.admin_security import (
 )
 from smishing_backend.api.contracts import contract_app
 from smishing_backend.api.contributions import router as contribution_router
+from smishing_backend.api.corpus import router as corpus_router
 from smishing_backend.api.health import router as health_router
 from smishing_backend.api.management import management_router
 from smishing_backend.api.proxy import ForwardedProto
@@ -26,6 +27,7 @@ from smishing_backend.data.repositories.administration import (
     PostgresAdministrationRepository,
 )
 from smishing_backend.data.repositories.poisoning import RiskAwareContributionRepository
+from smishing_backend.data.repositories.quarantine import PostgresQuarantineRepository
 from smishing_backend.data.repositories.review import PostgresReviewRepository
 from smishing_backend.data.risk_config import policy_from_settings
 from smishing_backend.domain.contributions import ContributionRepository
@@ -77,6 +79,7 @@ def create_app(
         )
         app.state.management = PostgresAdministrationRepository(engine, policy)
         app.state.reviews = PostgresReviewRepository(engine)
+        app.state.corpus = PostgresQuarantineRepository(engine)
         app.state.admin_limiter = RateLimiter(
             administrative.requests_per_minute, administrative.requests_per_minute
         )
@@ -111,6 +114,9 @@ def create_app(
     app.include_router(health_router)
     app.include_router(contribution_router)
     app.include_router(management_router)
+    app.include_router(
+        corpus_router, prefix=ADMIN_PREFIX, dependencies=[Depends(admin_bearer)]
+    )
     app.include_router(
         excel_router, prefix=ADMIN_PREFIX, dependencies=[Depends(admin_bearer)]
     )

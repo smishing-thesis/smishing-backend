@@ -36,16 +36,14 @@ def render_corpus(rows: list[dict]) -> CorpusArtifact:
             or origin not in {"manual", "device"}
         ):
             raise InvalidCorpusExport("Invalid accepted corpus record")
-        if (origin == "manual" and model is not None) or (
-            origin == "device" and (not isinstance(model, str) or not model)
-        ):
+        if not isinstance(model, str) or not model:
             raise InvalidCorpusExport("Invalid accepted corpus provenance")
         content.append(
             {
                 "text": text,
                 "label": LABELS[value],
                 "label_origin": origin,
-                "model_version": model or "",
+                "model_version": model,
             }
         )
     content.sort(

@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import Engine, case, exists, func, select, update
+from sqlalchemy import Engine, case, exists, func, select, true, update
 
+from smishing_backend.data.repositories.contribution_queries import automatic_label
 from smishing_backend.data.schema import (
     contributions,
     labels,
-    model_versions,
+    reviews,
     risk_flags,
 )
 from smishing_backend.domain.quarantine import Decision, InvalidTransition, Reason
@@ -30,6 +31,7 @@ class PostgresQuarantineRepository:
                 raise InvalidTransition()
 
     def accepted_for_training(self) -> list[dict]:
+        automatic = automatic_label()
         ranked = select(
             labels,
             func.row_number()
@@ -49,16 +51,14 @@ class PostgresQuarantineRepository:
                 contributions.c.text,
                 ranked.c.value.label("label"),
                 ranked.c.origin.label("label_origin"),
-                model_versions.c.version.label("model_version"),
+                automatic.c.model_version,
             )
             .select_from(
                 contributions.join(
                     ranked,
                     (ranked.c.contribution_id == contributions.c.id)
                     & (ranked.c.preference == 1),
-                ).outerjoin(
-                    model_versions, ranked.c.model_version_id == model_versions.c.id
-                )
+                ).outerjoin(automatic, true())
             )
             .where(contributions.c.status == "accepted")
             .where(
@@ -72,3 +72,66 @@ class PostgresQuarantineRepository:
         )
         with self.engine.connect() as connection:
             return [dict(row) for row in connection.execute(statement).mappings()]
+
+    def reviewed_for_training(self, limit: int) -> tuple[list[dict], int, int]:
+        automatic = automatic_label()
+        manual = labels.alias("reviewed_label")
+        unresolved = exists(
+            select(risk_flags.c.id).where(
+                risk_flags.c.contribution_id == contributions.c.id,
+                risk_flags.c.reviewed_at.is_(None),
+            )
+        )
+        are_accepted = contributions.c.status == "accepted"
+        joined = (
+            contributions.join(reviews, reviews.c.contribution_id == contributions.c.id)
+            .join(
+                manual,
+                (manual.c.id == reviews.c.label_id)
+                & (manual.c.contribution_id == contributions.c.id),
+            )
+            .outerjoin(automatic, true())
+        )
+        eligible = (
+            select(
+                contributions.c.text,
+                manual.c.value.label("label"),
+                manual.c.origin.label("label_origin"),
+                automatic.c.model_version,
+            )
+            .select_from(joined)
+            .where(
+                are_accepted,
+                reviews.c.decision == "accepted",
+                manual.c.origin == "manual",
+                automatic.c.model_version.is_not(None),
+                ~unresolved,
+            )
+        )
+        # Read accepted total, exclusions and rows from the same consistent snapshot.
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            accepted = connection.scalar(
+                select(func.count()).select_from(contributions).where(are_accepted)
+            )
+            included = connection.scalar(
+                select(func.count()).select_from(eligible.subquery())
+            )
+            has_registered_review = exists(
+                select(reviews.c.id).where(
+                    reviews.c.contribution_id == contributions.c.id,
+                    reviews.c.decision == "accepted",
+                )
+            )
+            unreviewed = connection.scalar(
+                select(func.count())
+                .select_from(contributions)
+                .where(are_accepted, ~has_registered_review)
+            )
+            rows = connection.execute(eligible.limit(limit + 1)).mappings()
+            return (
+                [dict(row) for row in rows],
+                (accepted or 0) - (included or 0),
+                unreviewed or 0,
+            )
