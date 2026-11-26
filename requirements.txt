@@ -374,16 +374,9 @@ sqlalchemy==2.1.6 \
     # via
     #   alembic
     #   smishing-backend
-srsly==2.5.5 \
-    --hash=sha256:099dbddf9e5aa934221492f520773ab7e473de85dc29226356cbddf052d56278 \
-    --hash=sha256:1a855f8fdfb9d293939746b730b871440f466053c09fb6067d2043aabca64a70 \
-    --hash=sha256:20c5d0c05f37b5fa0b998498c77ddbc8072d91db11e1f988f3820f955bfb75d2 \
-    --hash=sha256:49403619e708651f447ba11685a5513ab6cb22d927db6d770da10b0ce0bbc8ed \
-    --hash=sha256:5363dea121606895d2c4ad0b8432f6fd7ec1ed38ae15bf960ae0254cb38796a1 \
-    --hash=sha256:5ffada2d30878e6243b5fcb7753d38beb64cebbc5e02bb31161fd2e41e6c33ce \
-    --hash=sha256:9e7fab7290becbedc4506eaa1ab2c30a39c4cd16c56d3858065e349dc7de896e \
-    --hash=sha256:aa1bc4b7d7957264069c937eedf49ee1a7bd645051418bbc6a6e69e6316144c1 \
-    --hash=sha256:c25b58d9ff4f2ead718505fd4e69f2dd7b55ad34b08241794d1f3c61f0b58b63
+srsly==3.0.1 \
+    --hash=sha256:3f8f38da61fbec84cf2132d6ea90c8a358d00eaac9011244bceccd02abc69392 \
+    --hash=sha256:fd56c1876df09eebd0456175a72d7dd9a40f7fad545f777bcb2c40df8c4b0de9
     # via
     #   spacy
     #   thinc
