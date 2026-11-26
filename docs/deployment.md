@@ -199,9 +199,11 @@ Las migraciones no se revierten solas.
   terminó en rojo por el tiempo de arranque** descrito arriba; no se pudo confirmar
   qué paquete quedó activo (SCM no admite autenticación básica). Los dos commits solo
   diferían en workflow y documentación.
-- **No se ha probado** que Azure rechace un job de otra rama. El job solo corre con
-  `github.ref == refs/heads/main`, el environment `production` solo acepta `main`
-  (comprobado por configuración) y la credencial solo acepta ese environment.
+- Un disparo manual desde otra rama se omite (comprobado el 26-11-2026): el job solo
+  corre con `github.ref == refs/heads/main`. **No se ha probado** que Azure rechace un
+  job de otra rama que saltara esa condición: eso se apoya en que el environment
+  `production` solo acepta `main` (comprobado por configuración) y en que la credencial
+  solo acepta ese environment.
 
 ## Procedimiento (ejecutado a mano el 23-11-2026)
 
