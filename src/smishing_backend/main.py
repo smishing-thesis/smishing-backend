@@ -2,18 +2,23 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from smishing_backend.api.admin_security import AdministrativeGate
+from smishing_backend.api.admin_security import (
+    ADMIN_PREFIX,
+    AdministrativeGate,
+    admin_bearer,
+)
 from smishing_backend.api.contracts import contract_app
 from smishing_backend.api.contributions import router as contribution_router
 from smishing_backend.api.health import router as health_router
 from smishing_backend.api.management import management_router
 from smishing_backend.api.proxy import ForwardedProto
 from smishing_backend.api.rate_limit import RateLimiter
+from smishing_backend.api.review_exports import router as excel_router
 from smishing_backend.api.validation import contribution_error_handler
 from smishing_backend.config import Settings
 from smishing_backend.data.connection import create_database_engine
@@ -106,6 +111,9 @@ def create_app(
     app.include_router(health_router)
     app.include_router(contribution_router)
     app.include_router(management_router)
+    app.include_router(
+        excel_router, prefix=ADMIN_PREFIX, dependencies=[Depends(admin_bearer)]
+    )
     app.add_exception_handler(HTTPException, contribution_error_handler)
 
     @app.exception_handler(AnonymizationUnavailable)
