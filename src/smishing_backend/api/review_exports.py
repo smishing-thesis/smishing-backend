@@ -106,7 +106,7 @@ def import_rows(repository, actor: str, content: bytes) -> list[dict]:
 
 @router.post(
     "/reviews.xlsx",
-    openapi_extra={"requestBody": {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "properties": {"file": {"type": "string", "format": "binary"}}, "required": ["file"]}}}},
+    openapi_extra={"requestBody": {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "properties": {"file": {"type": "string", "format": "binary"}}, "required": ["file"]}}}}},
 )
 async def upload(request: Request):
     content = await read_upload(request)

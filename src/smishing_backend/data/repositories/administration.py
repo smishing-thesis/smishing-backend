@@ -1,5 +1,6 @@
 """Transactional management; terminal reviews and published facts are protected."""
 
+import builtins
 from uuid import uuid4
 
 from sqlalchemy import Engine, delete, func, insert, select, update
@@ -57,7 +58,7 @@ class PostgresAdministrationRepository:
 
     def list_contributions(
         self, filters: ContributionFilters, limit: int, offset: int
-    ) -> list[dict]:
+    ) -> builtins.list[dict]:
         statement = contribution_listing(filters).limit(limit).offset(offset)
         with self.engine.connect() as conn:
             results = []

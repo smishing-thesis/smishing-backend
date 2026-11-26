@@ -9,10 +9,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    model_validator,
+)
 from sqlalchemy.exc import SQLAlchemyError
 
-from smishing_backend.api.admin_security import ADMIN_PREFIX, admin_bearer, management_error
+from smishing_backend.api.admin_security import (
+    ADMIN_PREFIX,
+    admin_bearer,
+    management_error,
+)
 from smishing_backend.api.contracts import ModelVersion
 from smishing_backend.api.validation import read_json
 from smishing_backend.data.repositories.contribution_queries import ContributionFilters
@@ -43,7 +54,9 @@ class ManagementRoute(APIRoute):
 
 
 management_router = APIRouter(
-    prefix=ADMIN_PREFIX, route_class=ManagementRoute, dependencies=[Depends(admin_bearer)]
+    prefix=ADMIN_PREFIX,
+    route_class=ManagementRoute,
+    dependencies=[Depends(admin_bearer)],
 )
 router = APIRouter(tags=["Administración de aportes"])
 
@@ -65,13 +78,18 @@ class FilterQuery(BaseModel):
 
     @model_validator(mode="after")
     def chronological(self):
-        for start, end in ((self.received_from, self.received_to), (self.reviewed_from, self.reviewed_to)):
+        for start, end in (
+            (self.received_from, self.received_to),
+            (self.reviewed_from, self.reviewed_to),
+        ):
             if start is not None and end is not None and start > end:
                 raise ValueError("Invalid date range")
         return self
 
     def filters(self) -> ContributionFilters:
-        return ContributionFilters(**self.model_dump(include=set(ContributionFilters.__dataclass_fields__)))
+        return ContributionFilters(
+            **self.model_dump(include=set(ContributionFilters.__dataclass_fields__))
+        )
 
 
 class ListingQuery(FilterQuery):
@@ -96,7 +114,9 @@ class ListedContribution(BaseModel):
 
 @router.get("/contributions", response_model=list[ListedContribution])
 def listing(request: Request, query: Annotated[ListingQuery, Query()]):
-    return request.app.state.management.list_contributions(query.filters(), query.limit, query.offset)
+    return request.app.state.management.list_contributions(
+        query.filters(), query.limit, query.offset
+    )
 
 
 @router.delete("/contributions/{contribution_id}", status_code=204)
@@ -108,15 +128,24 @@ def delete_contribution(request: Request, contribution_id: UUID):
 @router.patch(
     "/contributions/{contribution_id}/review",
     response_model=ReviewCreated,
-    openapi_extra={"requestBody": {"required": True, "content": {"application/json": {"schema": ReviewInput.model_json_schema()}}}},
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {"schema": ReviewInput.model_json_schema()}
+            },
+        }
+    },
 )
 async def review_contribution(request: Request, contribution_id: UUID):
     from starlette.concurrency import run_in_threadpool
 
     payload = ReviewInput.model_validate(await read_json(request, 2048))
     reviewed = await run_in_threadpool(
-        request.app.state.reviews.decide, contribution_id,
-        request.state.administrative_actor, payload.to_decision(),
+        request.app.state.reviews.decide,
+        contribution_id,
+        request.state.administrative_actor,
+        payload.to_decision(),
     )
     return asdict(reviewed)
 
