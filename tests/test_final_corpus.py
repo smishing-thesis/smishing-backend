@@ -109,11 +109,9 @@ def test_corpus_limit_does_not_download_an_incomplete_file(client, monkeypatch):
     monkeypatch.setattr(corpus, "MAX_CORPUS_ROWS", 1)
     for text in ("Aporte sintético alfa <URL>", "Aporte sintético beta <URL>"):
         identity = contribute(client, text)
-        assert (
-            client.patch(f"{PATH}/{identity}/review", headers=ADMIN, json=DECISION)
-            .status_code
-            == 200
-        )
+        review_path = f"{PATH}/{identity}/review"
+        reviewed = client.patch(review_path, headers=ADMIN, json=DECISION)
+        assert reviewed.status_code == 200
     response = client.get(CSV, headers=ADMIN)
     assert response.status_code == 413
     assert "content-disposition" not in response.headers
