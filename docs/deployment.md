@@ -5,8 +5,10 @@ Estado al 23 de noviembre de 2026: el backend está desplegado a mano en un App 
 HTTPS solo y TLS mínimo 1.2 configurados en el portal. **No hay base de datos en
 Azure:** por ahora la base es un PostgreSQL gratuito de Render, con acceso externo
 (ver [Riesgos](#riesgos-conocidos-con-el-plan-free-f1)). El despliegue no está
-automatizado; el procedimiento de abajo es el que se ejecutó y funcionó. Lo que sigue
-sin comprobar está marcado en la lista de verificación.
+automatizado todavía: el CD de [Despliegue automático](#despliegue-automático-67) existe
+pero no corre hasta completar su configuración. El procedimiento manual de abajo es
+el que se ejecutó y funcionó, y sigue siendo válido. Lo que sigue sin comprobar está
+marcado en la lista de verificación.
 
 ## Qué cambia en el código
 
@@ -83,6 +85,101 @@ git add requirements.txt && git commit -m "chore(deps): regenerar requirements.t
 Fusionar el PR no despliega nada: hay que volver a desplegar con el procedimiento de
 abajo para que App Service reciba la versión nueva. `spacy` queda excluido de las
 subidas menores y mayores porque debe coincidir con el modelo `es_core_news_lg-3.8.0`.
+
+## Despliegue automático (#67)
+
+`.github/workflows/backend-deploy.yml` despliega `main` en `smishy-backend` después de
+cada push a `main` (decisión del 26-11-2026: en cada merge, también con cambios solo de
+documentación). No repite las pruebas: se apoya en el ruleset de `main`, que exige PR
+y `backend-verify` en verde. Pasos del job: entra a Azure con OIDC, arma el zip con
+`git archive` (`src`, `migrations`, `alembic.ini`, `requirements.txt`), aplica
+`alembic upgrade head`, ejecuta `az webapp deploy` y comprueba `/health` con reintentos
+de unos 6 minutos. Una migración fallida no despliega código. El host de la app se
+enmascara en los registros, porque los de un repositorio público son públicos.
+
+No usa un publish profile: la autenticación básica de SCM y FTP está desactivada. La
+identidad es una identidad administrada asignada por el usuario, con rol Website
+Contributor solo sobre `smishy-backend` y una credencial federada que solo acepta el
+environment `production`. Ese environment solo despliega desde `main`.
+
+### Configuración única (requiere Owner en la suscripción de la app)
+
+El workflow no corre hasta crear la variable `AZURE_DEPLOY_ENABLED`, que va al final.
+Ninguno de estos comandos lleva identificadores ni claves; no copiarlos al repositorio.
+
+1. En Azure, con `az login` en la cuenta dueña de la suscripción de la app y `SUB` con
+   el nombre o el id de esa suscripción:
+
+   ```sh
+   az identity create --subscription "$SUB" -g smishy-rg -n smishy-backend-deploy -l brazilsouth
+   az role assignment create --subscription "$SUB" --role "Website Contributor" \
+     --assignee-principal-type ServicePrincipal \
+     --assignee-object-id "$(az identity show --subscription "$SUB" -g smishy-rg -n smishy-backend-deploy --query principalId -o tsv)" \
+     --scope "$(az webapp show --subscription "$SUB" -g smishy-rg -n smishy-backend --query id -o tsv)"
+   az identity federated-credential create --subscription "$SUB" -g smishy-rg \
+     --identity-name smishy-backend-deploy --name github-production \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:smishing-thesis/smishing-backend:environment:production \
+     --audiences api://AzureADTokenExchange
+   ```
+
+2. En GitHub, el environment `production` limitado a `main`:
+
+   ```sh
+   gh api -X PUT repos/smishing-thesis/smishing-backend/environments/production \
+     -F 'deployment_branch_policy[protected_branches]=false' \
+     -F 'deployment_branch_policy[custom_branch_policies]=true'
+   gh api -X POST repos/smishing-thesis/smishing-backend/environments/production/deployment-branch-policies \
+     -f name=main -f type=branch
+   ```
+
+3. Secretos del environment, sin escribirlos en un comando. Los tres de Azure se pasan
+   por tubería y la URL de la base se escribe cuando `gh` la pide:
+
+   ```sh
+   az identity show --subscription "$SUB" -g smishy-rg -n smishy-backend-deploy --query clientId -o tsv | gh secret set AZURE_CLIENT_ID --env production
+   az account show --subscription "$SUB" --query tenantId -o tsv | gh secret set AZURE_TENANT_ID --env production
+   az account show --subscription "$SUB" --query id -o tsv | gh secret set AZURE_SUBSCRIPTION_ID --env production
+   gh secret set SMISHING_DATABASE_URL --env production
+   ```
+
+   `SMISHING_DATABASE_URL` tiene el mismo formato que el ajuste de la app
+   (`postgresql+psycopg://...?sslmode=require`, URL externa de Render).
+
+4. Activar el CD:
+
+   ```sh
+   gh variable set AZURE_DEPLOY_ENABLED --body true
+   ```
+
+### Volver a una versión anterior
+
+Dispara el workflow desde `main` con un commit que ya esté en `main`; uno que no lo
+sea se rechaza antes de desplegar:
+
+```sh
+gh workflow run backend-deploy.yml --ref main -f ref=<sha>
+```
+
+Las migraciones no se revierten solas.
+
+### Límites conocidos
+
+- **Un despliegue fallido deja la app detenida** (comportamiento de la CLI de Azure).
+  El job queda en rojo y no la arranca: revisar con `az webapp log download` y
+  redesplegar una versión buena.
+- **Cada merge reinicia producción.** En el plan F1 son 60 minutos de CPU al día y cada
+  arranque tarda de 78 a 207 s, así que varios merges seguidos gastan cuota.
+- **Las migraciones avanzan antes que el código.** Deben ser compatibles hacia atrás:
+  si el despliegue falla después de migrar, la versión anterior sigue corriendo con
+  el esquema nuevo.
+- **La base debe aceptar conexiones del runner de GitHub.** Si algún día pasa a ser
+  privada, el paso de migraciones fallará y habrá que moverlo.
+- **El registro del modelo** (`python -m smishing_backend.catalog --release`) sigue
+  siendo manual: solo se hace al publicar una versión nueva del modelo.
+- La prueba real del primer despliegue automático, del regreso a una versión anterior y
+  de que la identidad no despliega desde otra rama **no se ha ejecutado**: depende de
+  la configuración anterior (#67).
 
 ## Procedimiento (ejecutado a mano el 23-11-2026)
 
