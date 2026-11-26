@@ -1,25 +1,13 @@
-# Actualizaciones de versiones de Dependabot (#60). Las actualizaciones de seguridad
-# se activan aparte, en los ajustes del repositorio.
+# Actualizaciones de versiones de Dependabot (#60, #70). Las actualizaciones de
+# seguridad se activan aparte, en los ajustes del repositorio.
+#
+# El ecosistema "uv" no se usa (#70): Dependabot no puede actualizar uv.lock por el
+# enlace directo al modelo es_core_news_lg de pyproject.toml y en su lugar edita
+# requirements.txt, que se genera desde el lock. Las dependencias de Python se
+# actualizan a mano; ver docs/deployment.md.
 version: 2
 
 updates:
-  - package-ecosystem: "uv"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      timezone: "America/Lima"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "chore(deps)"
-    groups:
-      python-minor-patch:
-        update-types: ["minor", "patch"]
-    ignore:
-      # spacy debe coincidir con el modelo es_core_news_lg-3.8.0 (ver pyproject.toml).
-      - dependency-name: "spacy"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
