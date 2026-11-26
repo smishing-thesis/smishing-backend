@@ -73,28 +73,50 @@ class PostgresQuarantineRepository:
         with self.engine.connect() as connection:
             return [dict(row) for row in connection.execute(statement).mappings()]
 
-
     def reviewed_for_training(self, limit: int) -> tuple[list[dict], int]:
         automatic = automatic_label()
         manual = labels.alias("reviewed_label")
-        unresolved = exists(select(risk_flags.c.id).where(
-            risk_flags.c.contribution_id == contributions.c.id,
-            risk_flags.c.reviewed_at.is_(None),
-        ))
+        unresolved = exists(
+            select(risk_flags.c.id).where(
+                risk_flags.c.contribution_id == contributions.c.id,
+                risk_flags.c.reviewed_at.is_(None),
+            )
+        )
         are_accepted = contributions.c.status == "accepted"
         joined = (
             contributions.join(reviews, reviews.c.contribution_id == contributions.c.id)
-            .join(manual, (manual.c.id == reviews.c.label_id) & (manual.c.contribution_id == contributions.c.id))
+            .join(
+                manual,
+                (manual.c.id == reviews.c.label_id)
+                & (manual.c.contribution_id == contributions.c.id),
+            )
             .outerjoin(automatic, true())
         )
-        eligible = select(
-            contributions.c.text, manual.c.value.label("label"),
-            manual.c.origin.label("label_origin"), automatic.c.model_version,
-        ).select_from(joined).where(are_accepted, reviews.c.decision == "accepted",
-            manual.c.origin == "manual", automatic.c.model_version.is_not(None), ~unresolved)
+        eligible = (
+            select(
+                contributions.c.text,
+                manual.c.value.label("label"),
+                manual.c.origin.label("label_origin"),
+                automatic.c.model_version,
+            )
+            .select_from(joined)
+            .where(
+                are_accepted,
+                reviews.c.decision == "accepted",
+                manual.c.origin == "manual",
+                automatic.c.model_version.is_not(None),
+                ~unresolved,
+            )
+        )
         # Read accepted total, exclusions and rows from the same consistent snapshot.
-        with self.engine.connect().execution_options(isolation_level="REPEATABLE READ") as connection:
-            accepted = connection.scalar(select(func.count()).select_from(contributions).where(are_accepted))
-            included = connection.scalar(select(func.count()).select_from(eligible.subquery()))
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            accepted = connection.scalar(
+                select(func.count()).select_from(contributions).where(are_accepted)
+            )
+            included = connection.scalar(
+                select(func.count()).select_from(eligible.subquery())
+            )
             rows = connection.execute(eligible.limit(limit + 1)).mappings()
             return [dict(row) for row in rows], (accepted or 0) - (included or 0)

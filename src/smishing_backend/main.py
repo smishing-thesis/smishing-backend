@@ -7,7 +7,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from smishing_backend.api.admin_security import ADMIN_PREFIX, AdministrativeGate, admin_bearer
+from smishing_backend.api.admin_security import (
+    ADMIN_PREFIX,
+    AdministrativeGate,
+    admin_bearer,
+)
 from smishing_backend.api.contracts import contract_app
 from smishing_backend.api.contributions import router as contribution_router
 from smishing_backend.api.corpus import router as corpus_router
@@ -109,7 +113,9 @@ def create_app(
     app.include_router(health_router)
     app.include_router(contribution_router)
     app.include_router(management_router)
-    app.include_router(corpus_router, prefix=ADMIN_PREFIX, dependencies=[Depends(admin_bearer)])
+    app.include_router(
+        corpus_router, prefix=ADMIN_PREFIX, dependencies=[Depends(admin_bearer)]
+    )
     app.add_exception_handler(HTTPException, contribution_error_handler)
 
     @app.exception_handler(AnonymizationUnavailable)

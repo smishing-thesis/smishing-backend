@@ -15,7 +15,11 @@ router = APIRouter(prefix="/corpus", tags=["Corpus final"], route_class=Manageme
 @router.get(
     "/accepted.csv",
     response_class=Response,
-    responses={200: {"content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}}}},
+    responses={
+        200: {
+            "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}}
+        }
+    },
 )
 def download(request: Request):
     rows, excluded = request.app.state.corpus.reviewed_for_training(MAX_CORPUS_ROWS)
@@ -27,7 +31,8 @@ def download(request: Request):
         raise ManagementError(503) from None
     date = datetime.now(UTC).date().isoformat()
     return Response(
-        artifact.csv_bytes, media_type="text/csv",
+        artifact.csv_bytes,
+        media_type="text/csv",
         headers={
             "Content-Disposition": f'attachment; filename="corpus-{date}-{artifact.version}.csv"',
             "X-Corpus-Date": date,

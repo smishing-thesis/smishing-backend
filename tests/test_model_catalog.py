@@ -159,7 +159,8 @@ def test_manual_and_device_labels_coexist_and_manual_wins(pg):
     training = quarantine.accepted_for_training()
     assert len(training) == 1 and training[0]["label"] == "safe"
     assert (
-        training[0]["label_origin"] == "manual" and training[0]["model_version"] == "1.0.0"
+        training[0]["label_origin"] == "manual"
+        and training[0]["model_version"] == "1.0.0"
     )
     with pg.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(labels)) == 2
