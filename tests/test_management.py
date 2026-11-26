@@ -256,11 +256,8 @@ def test_label_source_and_model_version_select_different_rows(
     )
     assert response.status_code == 201
     device = response.json()["id"]
-    assert (
-        client.patch(f"{PATH}/{manual}/review", headers=ADMIN, json=DECISION)
-        .status_code
-        == 200
-    )
+    reviewed = client.patch(f"{PATH}/{manual}/review", headers=ADMIN, json=DECISION)
+    assert reviewed.status_code == 200
     for query, expected in [
         ({"source": "device"}, [device]),
         ({"source": "manual"}, [manual]),
