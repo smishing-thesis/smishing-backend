@@ -12,7 +12,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic_settings import SettingsConfigDict
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from smishing_backend.api.contracts import ContributionInput
@@ -40,15 +39,12 @@ from smishing_backend.domain.privacy import (
     load_name_detector,
 )
 from smishing_backend.domain.text import normalize_text
+from smishing_backend.review_auth import AdminSettings as AdminSettings
 from smishing_backend.review_auth import (
     ReviewGate,
     ReviewSettings,
-    validate_review_credentials,
+    validate_admin_credentials,
 )
-
-
-class AdminSettings(ReviewSettings):
-    model_config = SettingsConfigDict(env_prefix="SMISHING_ADMIN_", extra="ignore")
 
 
 class EntityResponse(BaseModel):
@@ -134,13 +130,7 @@ def create_admin_app(
     configured = settings if settings is not None else AdminSettings()
     public = database if database is not None else Settings()
     review = reviewers if reviewers is not None else ReviewSettings()
-    validate_review_credentials(configured, public)
-    if {key.get_secret_value() for key in configured.credentials.values()} & {
-        key.get_secret_value() for key in review.credentials.values()
-    }:
-        raise RuntimeError(
-            "Administrative credentials must differ from reviewer credentials"
-        )
+    validate_admin_credentials(configured, public, review)
 
     @asynccontextmanager
     async def lifespan(app):

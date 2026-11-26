@@ -16,6 +16,24 @@ class ReviewSettings(BaseSettings):
     credentials: dict[str, SecretStr] = Field(default_factory=dict)
 
 
+class AdminSettings(ReviewSettings):
+    model_config = SettingsConfigDict(env_prefix="SMISHING_ADMIN_", extra="ignore")
+    requests_per_minute: int = Field(default=30, ge=1)
+    failed_requests_per_minute: int = Field(default=20, ge=1)
+
+
+def validate_admin_credentials(
+    admin: AdminSettings, public: Settings, review: ReviewSettings
+) -> None:
+    validate_review_credentials(admin, public)
+    if {key.get_secret_value() for key in admin.credentials.values()} & {
+        key.get_secret_value() for key in review.credentials.values()
+    }:
+        raise RuntimeError(
+            "Administrative credentials must differ from reviewer credentials"
+        )
+
+
 def validate_review_credentials(settings: ReviewSettings, public: Settings) -> None:
     keys = [value.get_secret_value() for value in settings.credentials.values()]
     app_keys = [value.get_secret_value() for value in public.api_keys]

@@ -34,6 +34,7 @@ el modo `SMISHING_BEHIND_TLS_PROXY=true`, apagado por defecto:
 | --- | --- |
 | SMISHING_BEHIND_TLS_PROXY | true |
 | SMISHING_DATABASE_URL | `postgresql+psycopg://usuario:clave@host:5432/base?sslmode=require`; ajuste de la app o Key Vault, nunca el repositorio. Con Render se usa la **External** Database URL (la Internal solo funciona dentro de Render) cambiando el inicio `postgresql://` por `postgresql+psycopg://` y agregando `?sslmode=require`, que hace fallar la conexión en vez de bajar a texto plano |
+| SMISHING_ADMIN_CREDENTIALS | Objeto JSON ID de operador a secreto Bearer; distinto de Android y de revisión. Ajuste seguro de la app. Sin valor, las rutas de gestión responden 401. |
 | SMISHING_API_KEY | clave de la app; para rotar con solapamiento, SMISHING_API_KEYS con una lista JSON |
 | SMISHING_LOG_DIR | un directorio bajo /home, p. ej. /home/smishing-logs |
 | PYTHONPATH | `src` (relativo; ver la nota de abajo) |
@@ -190,4 +191,4 @@ puede tener otras apps.
   claves (regla del proyecto), pero no se revisó un registro real porque la plataforma
   no guarda ninguno.
 - [ ] Base de datos sin acceso desde internet (**no alcanzable con el plan Free**).
-- [ ] Revisión (8444) y administración (8445) no expuestas: no desplegar esos runners.
+- [ ] Verificar revisión y administración de #54 en el Swagger principal después de aprobar el PR. Los runners 8444 y 8445 se reservan para uso local. Comprobar 401 y no-store sin enviar credenciales. Las pruebas con datos sintéticos se hacen en la base local. Coordinar un solo despliegue para cuidar la cuota del plan Free.

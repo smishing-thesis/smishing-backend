@@ -1,8 +1,9 @@
 # Hito #13: revisión manual protegida
 
 La revisión es una **segunda aplicación**, `smishing_backend.review:app`.
-Nunca se monta en `smishing_backend.main:app`, y sus rutas no aparecen en el
-OpenAPI público de aportes. El servicio de revisión escucha solo en loopback
+El runner local conserva sus rutas. La misma revisión terminal también está en
+la API principal por `PATCH /api/v1/admin/contributions/{contribution_id}/review`,
+con Bearer de administración y fuera del contrato del cliente Android. El servicio de revisión escucha solo en loopback
 por defecto; una futura publicación necesita acceso privado y controles de red.
 No se ha hecho despliegue ni se ha expuesto este servicio en Internet.
 

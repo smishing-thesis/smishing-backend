@@ -41,7 +41,8 @@ flowchart LR
     A[Android: consentimiento, anonimización e inferencia local] -->|HTTPS y API key| B[API pública]
     B --> C[Validación y reglas del dominio]
     C --> D[Repositorios PostgreSQL]
-    R[Operador con credencial de revisor] --> E[API interna separada]
+    R[Operador con credencial de revisor] --> E[API local de revisión]
+    O[Operador con Bearer administrativo] --> B
     E --> D
     D --> F[Comando de exportación de aceptados]
     F --> G[Archivo para el lector del pipeline del modelo]
@@ -98,7 +99,7 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
    el registro existente, sin guardar el cuerpo del envío duplicado.
 8. Guarda aporte y etiquetas en una transacción; las marcas son de #14. Nace `pending`, nunca
    directamente aceptado. Un fallo revierte las escrituras; error genérico 503.
-9. El revisor entra a **otra aplicación**, con Bearer distinto de la API key.
+9. El revisor entra a **la API de revisión local o a la ruta administrativa de la API principal**, con Bearer distinto de la API key.
    Lista pendientes, acepta/rechaza y elige etiqueta manual. Se registran ID
    autorizado, decisión y fecha junto a la etiqueta, de forma atómica.
 10. Un marcado requiere reconocimiento explícito de sus alertas. Si una nueva
@@ -108,8 +109,8 @@ alcance limitado. Por eso no se garantiza anonimización perfecta y existe revis
     Genera CSV/manifiesto reproducibles, sin metadatos de contribuyente o revisor.
     La exclusión de alertas se aplica también a aportes aceptados previamente.
 
-Errores públicos nunca contienen el SMS ni los valores rechazados. La revisión
-interna no aparece en OpenAPI público. No hay endpoint público de descarga.
+Errores públicos nunca contienen el SMS ni los valores rechazados. La revisión en la API principal aparece en Swagger bajo su prefijo
+administrativo y queda fuera del contrato móvil. No hay endpoint público de descarga.
 
 ## Contrato y decisiones de diseño
 
