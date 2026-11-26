@@ -6,7 +6,12 @@ from smishing_backend.data.repositories.contribution_queries import automatic_la
 from smishing_backend.data.repositories.poisoning import lock_risk_snapshot
 from smishing_backend.data.schema import contributions, labels, reviews, risk_flags
 from smishing_backend.domain.quarantine import InvalidTransition
-from smishing_backend.domain.review import RegisteredReview, ReviewAlreadyRecorded, ReviewDecision, ReviewExpectation
+from smishing_backend.domain.review import (
+    RegisteredReview,
+    ReviewAlreadyRecorded,
+    ReviewDecision,
+    ReviewExpectation,
+)
 
 
 class PostgresReviewRepository:
@@ -30,8 +35,12 @@ class PostgresReviewRepository:
             ]
 
     def decide(
-        self, contribution_id: UUID, reviewer_id: str, decision: ReviewDecision,
-        *, expectation: ReviewExpectation | None = None,
+        self,
+        contribution_id: UUID,
+        reviewer_id: str,
+        decision: ReviewDecision,
+        *,
+        expectation: ReviewExpectation | None = None,
     ) -> RegisteredReview:
         review_id, label_id = uuid4(), uuid4()
         with self.engine.begin() as connection:
@@ -39,12 +48,20 @@ class PostgresReviewRepository:
             if expectation is not None:
                 automatic = automatic_label()
                 row = connection.execute(
-                    select(contributions.c.status, contributions.c.content_hash, automatic.c.model_version)
+                    select(
+                        contributions.c.status,
+                        contributions.c.content_hash,
+                        automatic.c.model_version,
+                    )
                     .select_from(contributions.outerjoin(automatic, true()))
                     .where(contributions.c.id == contribution_id)
                     .with_for_update(of=contributions)
                 ).first()
-                if row is None or row.content_hash != expectation.content_hash or row.model_version != expectation.model_version:
+                if (
+                    row is None
+                    or row.content_hash != expectation.content_hash
+                    or row.model_version != expectation.model_version
+                ):
                     raise InvalidTransition()
                 if row.status != "pending":
                     raise ReviewAlreadyRecorded()

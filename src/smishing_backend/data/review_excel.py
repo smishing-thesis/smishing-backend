@@ -13,8 +13,18 @@ MAX_FILE_BYTES = 512 * 1024
 MAX_BODY_BYTES = MAX_FILE_BYTES + 16 * 1024
 MAX_UNCOMPRESSED_BYTES = 8 * 1024 * 1024
 COLUMNS = (
-    "id", "received_at", "status", "text", "content_hash", "automatic_label",
-    "model_version", "risk_signals", "decision", "label", "reason", "acknowledge_flags",
+    "id",
+    "received_at",
+    "status",
+    "text",
+    "content_hash",
+    "automatic_label",
+    "model_version",
+    "risk_signals",
+    "decision",
+    "label",
+    "reason",
+    "acknowledge_flags",
 )
 SHEET = "Aportes"
 
@@ -29,8 +39,13 @@ def encode_workbook(rows: list[dict]) -> bytes:
     sheet.column_dimensions["D"].width = 75
     for row_index, row in enumerate(rows, 2):
         values = (
-            str(row["id"]), row["received_at"].isoformat(), row["status"], row["text"],
-            row["content_hash"], row["automatic_label"], row["model_version"],
+            str(row["id"]),
+            row["received_at"].isoformat(),
+            row["status"],
+            row["text"],
+            row["content_hash"],
+            row["automatic_label"],
+            row["model_version"],
             ", ".join(row["risk_signals"]),
         )
         for column, value in enumerate(values, 1):
@@ -57,10 +72,15 @@ def _check_archive(source: BytesIO) -> None:
         entries = archive.infolist()
         names = {entry.filename for entry in entries}
         if (
-            len(entries) > 128 or len(names) != len(entries)
+            len(entries) > 128
+            or len(names) != len(entries)
             or sum(entry.file_size for entry in entries) > MAX_UNCOMPRESSED_BYTES
             or any(entry.flag_bits & 1 for entry in entries)
-            or any("vbaproject" in name.lower() or name.startswith(("xl/externalLinks/", "xl/embeddings/")) for name in names)
+            or any(
+                "vbaproject" in name.lower()
+                or name.startswith(("xl/externalLinks/", "xl/embeddings/"))
+                for name in names
+            )
         ):
             raise ValueError("Unsupported archive")
 
@@ -80,7 +100,7 @@ def decode_workbook(content: bytes) -> list[tuple[int, dict | None]]:
             header = next(rows)
             if tuple(cell.value for cell in header) != COLUMNS:
                 raise ValueError("Invalid template")
-            output = []
+            output: list[tuple[int, dict | None]] = []
             for number, cells in enumerate(rows, 2):
                 if number > MAX_ROWS + 1:
                     raise ManagementError(413)
@@ -104,6 +124,12 @@ def decode_workbook(content: bytes) -> list[tuple[int, dict | None]]:
 def row_identity(values: dict):
     identity = UUID(values["id"]) if isinstance(values["id"], str) else None
     digest, version = values["content_hash"], values["model_version"]
-    if identity is None or not isinstance(digest, str) or len(digest) != 64 or not isinstance(version, str) or not 1 <= len(version) <= 20:
+    if (
+        identity is None
+        or not isinstance(digest, str)
+        or len(digest) != 64
+        or not isinstance(version, str)
+        or not 1 <= len(version) <= 20
+    ):
         raise ValueError("Invalid row identity")
     return identity, digest, version
