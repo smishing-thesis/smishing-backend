@@ -34,11 +34,11 @@ jobs:
       SMISHING_DATABASE_URL: postgresql+psycopg://postgres:synthetic-ci-only@localhost:5432/smishing_test
       SMISHING_TEST_DATABASE_URL: postgresql+psycopg://postgres:synthetic-ci-only@localhost:5432/smishing_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.23"
           enable-cache: true
