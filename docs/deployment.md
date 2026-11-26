@@ -68,6 +68,22 @@ uv export --locked --no-dev --no-emit-project --format requirements-txt -o requi
 
 Incluye el modelo de spaCy `es_core_news_lg` como enlace directo a GitHub.
 
+### PR de Dependabot (#60)
+
+Dependabot actualiza `pyproject.toml` y `uv.lock`, pero no `requirements.txt`. Un PR
+suyo que cambie `uv.lock` falla en `test_requirements_match_the_lock_and_exclude_development_tools`
+hasta que se regenere el archivo. Antes de fusionarlo, desde su rama:
+
+```sh
+git fetch origin && git switch <rama-de-dependabot>
+uv export --locked --no-dev --no-emit-project --format requirements-txt -o requirements.txt
+git add requirements.txt && git commit -m "chore(deps): regenerar requirements.txt" && git push
+```
+
+Fusionar el PR no despliega nada: hay que volver a desplegar con el procedimiento de
+abajo para que App Service reciba la versión nueva. `spacy` queda excluido de las
+subidas menores y mayores porque debe coincidir con el modelo `es_core_news_lg-3.8.0`.
+
 ## Procedimiento (ejecutado a mano el 23-11-2026)
 
 Requiere la CLI de Azure con la sesión iniciada (`az login`) en la suscripción
