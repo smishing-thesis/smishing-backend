@@ -41,7 +41,8 @@ flowchart LR
     A[Android: consentimiento, anonimización e inferencia local] -->|HTTPS y API key| B[API pública]
     B --> C[Validación y reglas del dominio]
     C --> D[Repositorios PostgreSQL]
-    R[Operador con credencial de revisor] --> E[API interna separada]
+    R[Operador con credencial de revisor] --> E[API local de revisión]
+    O[Operador con Bearer administrativo] --> B
     E --> D
     D --> F[Comando de exportación de aceptados]
     F --> G[Archivo para el lector del pipeline del modelo]

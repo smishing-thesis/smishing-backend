@@ -49,6 +49,8 @@ Crear aportes sintéticos con la API key de prueba, autorizar Bearer de gestión
 filtrar por pendientes, revisar uno, repetir para mostrar 409 y borrar otro por ID.
 No mostrar los valores de credenciales en la grabación.
 
+La [ejecución de QA en GitHub Actions](https://github.com/smishing-thesis/smishing-backend/actions/runs/45766473712) levantó Uvicorn HTTPS con PostgreSQL 17 sintético y abrió Swagger en Chromium. Comprobó 401 sin Bearer, listado y revisión 200 y borrado 204. Las peticiones del flujo se hicieron con un cliente HTTPS que validó el certificado local. Queda verificar la publicación en Azure.
+
 ## Métodos de la aplicación local de #46
 
 | Recurso | Colección | Elemento |
