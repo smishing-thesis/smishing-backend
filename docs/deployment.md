@@ -70,21 +70,35 @@ uv export --locked --no-dev --no-emit-project --format requirements-txt -o requi
 
 Incluye el modelo de spaCy `es_core_news_lg` como enlace directo a GitHub.
 
-### PR de Dependabot (#60)
+### Dependabot y las dependencias de Python (#60, #70)
 
-Dependabot actualiza `pyproject.toml` y `uv.lock`, pero no `requirements.txt`. Un PR
-suyo que cambie `uv.lock` falla en `test_requirements_match_the_lock_and_exclude_development_tools`
-hasta que se regenere el archivo. Antes de fusionarlo, desde su rama:
+Dependabot solo vigila GitHub Actions. El ecosistema `uv` se quitó el 26-11-2026 (#70)
+porque no sirve para este proyecto:
+
+- No puede actualizar `pyproject.toml` ni `uv.lock`: falla con
+  `private_source_authentication_failure` por el enlace directo al modelo
+  `es_core_news_lg`.
+- En su lugar edita `requirements.txt` (versión y hashes) y deja `uv.lock` igual. Sus
+  PR fallan siempre en `test_requirements_match_the_lock_and_exclude_development_tools`,
+  y esa prueba hace bien en bloquearlos: App Service construye con `requirements.txt`.
+- Propuso saltos mayores de dependencias internas de `spacy` 3.8 (`thinc`, `srsly`,
+  `smart-open`) que podrían romper la instalación. `spacy` debe coincidir con el modelo
+  `es_core_news_lg-3.8.0`.
+
+Las dependencias de Python se actualizan **a mano**, solo cuando haya una alerta de
+seguridad real (las alertas y las actualizaciones de seguridad de Dependabot siguen
+activas, pero sus PR pueden fallar igual: no fusionarlos si solo tocan
+`requirements.txt`):
 
 ```sh
-git fetch origin && git switch <rama-de-dependabot>
+uv lock --upgrade-package <paquete>
 uv export --locked --no-dev --no-emit-project --format requirements-txt -o requirements.txt
-git add requirements.txt && git commit -m "chore(deps): regenerar requirements.txt" && git push
+uv run --locked pytest -q
 ```
 
-Fusionar el PR no despliega nada: hay que volver a desplegar con el procedimiento de
-abajo para que App Service reciba la versión nueva. `spacy` queda excluido de las
-subidas menores y mayores porque debe coincidir con el modelo `es_core_news_lg-3.8.0`.
+Se abre un PR con `uv.lock` y `requirements.txt` juntos. Al fusionarlo, el CD despliega
+(ver [Despliegue automático](#despliegue-automático-67)). Este procedimiento no se ha
+ejecutado con una actualización real.
 
 ## Despliegue automático (#67)
 
