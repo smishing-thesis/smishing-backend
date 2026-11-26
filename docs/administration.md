@@ -1,12 +1,55 @@
 # Administración de las entidades del corpus — #46
 
-Las tres entidades de Figura 6 tienen CRUD real en una aplicación interna
-separada: `smishing_backend.admin:app`. Requiere credenciales administrativas
-propias, distintas de Android y de revisión. No ofrece acceso anónimo al corpus.
-La API pública de Android conserva POST /api/v1/contributions; GET y los cambios
-se usan en el Swagger administrativo, no con la API key compartida de Android.
+La aplicación local de #46 sigue disponible en el puerto 8445. La API principal
+(`smishing_backend.main:app`) también incluye el listado, borrado individual y
+revisión de aportes, en la etiqueta «Administración de aportes» de su mismo
+Swagger. Android usa las rutas de recepción de su contrato versionado.
+Las rutas de gestión exigen HTTPS y Bearer de administración, distinto de todas
+las claves Android y de revisión. Sin administradores configurados responden 401.
 
-## Métodos
+| Método | Ruta de la API principal | Uso |
+| --- | --- | --- |
+| GET | `/api/v1/admin/contributions` | Listar y filtrar |
+| DELETE | `/api/v1/admin/contributions/{contribution_id}` | Borrado individual con cascada |
+| PATCH | `/api/v1/admin/contributions/{contribution_id}/review` | Registrar una revisión terminal |
+
+El prefijo administrativo conserva exactamente la ruta y el OpenAPI móvil,
+incluyendo el envío por lote. La respuesta de gestión lleva
+`Cache-Control: no-store`. Las cuotas por proceso de gestión autorizada (30/min)
+y fallida (20/min) son independientes entre sí y de la ingesta.
+Ajustes: `SMISHING_ADMIN_REQUESTS_PER_MINUTE` y
+`SMISHING_ADMIN_FAILED_REQUESTS_PER_MINUTE`. Tras agotar cuota se devuelve 429 con
+`Retry-After`. No se guardan credenciales, identificadores de red ni URLs en el
+limitador. Detrás de Azure las solicitudes fallidas comparten una cuota global.
+
+Filtros combinables: `status`, `received_from`, `received_to`, `reviewed_from`,
+`reviewed_to`, `category`, `source`, `model_version`, `reason`, `has_risk`.
+Las fechas son ISO 8601 con zona horaria y los límites son inclusivos.
+`category` y `source` corresponden a la etiqueta vigente (manual más reciente
+si existe, o automática). `model_version` proviene de la etiqueta automática
+de origen, incluso si la etiqueta vigente es manual. `has_risk=true` selecciona
+alertas aún sin revisar. `order=desc` por defecto, `asc` para invertir.
+El orden usa recepción y UUID en la misma dirección. `limit=50` admite 1–100
+y `offset=0` admite hasta 1 000 000. Filtros no admitidos, incluidos los de
+texto, producen un 422 genérico. Un filtro sin coincidencias devuelve [].
+
+En PATCH envía `decision`, `reason`, `label` y, si corresponde,
+`acknowledge_flags: true`. Ejemplo: `{"decision":"accepted","reason":"quality_checked","label":"smishing"}`.
+El actor se deriva del Bearer. Solo se modifica un aporte pendiente y se conserva
+su etiqueta automática. Repetir la revisión, o intentar decidir con alertas
+pendientes sin confirmarlas, devuelve 409. Borrar usa las mismas relaciones y
+restricciones de #46. No hay borrado masivo.
+
+Para grabar en local, usar PostgreSQL de prueba con migraciones y la versión
+`1.0.0` registrada, y configurar `SMISHING_ADMIN_CREDENTIALS` como objeto JSON
+que mapea un ID de operador a un secreto local de prueba. En el runner público
+`python -m smishing_backend.server`, definir `TLS_CERT_PATH` y `TLS_KEY_PATH`,
+usar el certificado local de confianza y abrir `https://127.0.0.1:8443/docs`.
+Crear aportes sintéticos con la API key de prueba, autorizar Bearer de gestión,
+filtrar por pendientes, revisar uno, repetir para mostrar 409 y borrar otro por ID.
+No mostrar los valores de credenciales en la grabación.
+
+## Métodos de la aplicación local de #46
 
 | Recurso | Colección | Elemento |
 | --- | --- | --- |
@@ -47,8 +90,7 @@ una versión referenciada devuelve 409 y revierte la operación.
 
 DELETE de aporte elimina físicamente ese aporte y sus relaciones en una
 transacción, incluyendo revisión/marcas. Es una operación administrativa
-explícita; no deshace archivos exportados o respaldos previos. Proteger las
-credenciales y limitar la red de este servicio; no publicarlo como API Android.
+explícita; no deshace archivos exportados o respaldos previos. Proteger las credenciales y limitar la red del runner local. Las rutas de la API principal usan el Bearer documentado arriba.
 No se crea una auditoría nueva de borrados ni se afirma que exista un historial
 de modificaciones: la auditoría de revisión sigue en reviews y risk_flags.
 

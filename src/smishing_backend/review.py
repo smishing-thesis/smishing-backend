@@ -17,20 +17,13 @@ from smishing_backend.config import Settings
 from smishing_backend.data.connection import create_database_engine
 from smishing_backend.data.repositories.review import PostgresReviewRepository
 from smishing_backend.domain.quarantine import InvalidTransition
-from smishing_backend.domain.review import ReviewDecision, ReviewRepository
+from smishing_backend.domain.review import ReviewRepository
 from smishing_backend.review_auth import (
     ReviewGate,
     ReviewSettings,
     validate_review_credentials,
 )
-
-
-class ReviewInput(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-    decision: Literal["accepted", "rejected"]
-    reason: Literal["quality_checked", "invalid_content", "out_of_scope"]
-    label: Literal["safe", "smishing"]
-    acknowledge_flags: bool = False
+from smishing_backend.review_contract import ReviewCreated, ReviewInput
 
 
 class FlagAcknowledgement(BaseModel):
@@ -42,15 +35,6 @@ class PendingContribution(BaseModel):
     id: UUID
     text: str
     received_at: datetime
-
-
-class ReviewCreated(BaseModel):
-    id: UUID
-    contribution_id: UUID
-    reviewer_id: str
-    decision: Literal["accepted", "rejected"]
-    reviewed_at: datetime
-    label: Literal["safe", "smishing"]
 
 
 def create_review_app(
@@ -97,11 +81,8 @@ def create_review_app(
         dependencies=[Depends(bearer)],
     )
     def decide(contribution_id: UUID, payload: ReviewInput, request: Request):
-        decision = ReviewDecision(
-            payload.decision, payload.reason, payload.label, payload.acknowledge_flags
-        )
         result = request.app.state.repository.decide(
-            contribution_id, request.state.reviewer_id, decision
+            contribution_id, request.state.reviewer_id, payload.to_decision()
         )
         return asdict(result)
 

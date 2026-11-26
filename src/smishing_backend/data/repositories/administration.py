@@ -5,6 +5,10 @@ from uuid import uuid4
 from sqlalchemy import Engine, delete, func, insert, select, update
 
 from smishing_backend.data.model_release import read_github_publication
+from smishing_backend.data.repositories.contribution_queries import (
+    ContributionFilters,
+    contribution_listing,
+)
 from smishing_backend.data.repositories.model_catalog import (
     PostgresModelCatalog,
     publication_values,
@@ -50,6 +54,20 @@ class PostgresAdministrationRepository:
                     select(table).order_by(table.c.id).limit(limit).offset(offset)
                 )
             ]
+
+    def list_contributions(
+        self, filters: ContributionFilters, limit: int, offset: int
+    ) -> list[dict]:
+        statement = contribution_listing(filters).limit(limit).offset(offset)
+        with self.engine.connect() as conn:
+            results = []
+            for result in conn.execute(statement).mappings():
+                if not result["model_version"] or not result["source"]:
+                    raise ManagementError(503)
+                results.append(
+                    {**result, "risk_signals": sorted(result["risk_signals"] or [])}
+                )
+            return results
 
     def get(self, resource, identity):
         table = TABLES[resource]
