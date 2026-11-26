@@ -84,3 +84,10 @@ Revalidado sobre main después de integrar #34: 130 pruebas y dos subtests,
 con importación real de v1.0.0 repetida sobre un esquema temporal nuevo.
 [Resultado de la importación](evidence/catalog-2026-11-08.json).
 El PR #38 tiene base main y contiene solo #15. No se ha desplegado.
+
+
+El corpus final HTTP (#56) exige un aporte aceptado y una revisión registrada
+que enlaza su etiqueta manual. La versión exportada siempre es la de la
+etiqueta automática de origen, aunque se exporte la categoría manual. El CLI
+conserva su selección histórica y usa el mismo generador. Ver
+[cómo se selecciona y descarga el corpus](corpus-export.md).

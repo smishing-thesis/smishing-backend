@@ -61,7 +61,7 @@ def test_exports_only_accepted_and_preferred_manual_label(accepted_rows, tmp_pat
     assert {r["label"] for r in rows} == {"0", "1"}
     assert {r["label_origin"] for r in rows} == {"manual"}
     assert all(
-        r["model_version"] == "" and r["corpus_version"] == artifact.version
+        r["model_version"] == "1.0.0" and r["corpus_version"] == artifact.version
         for r in rows
     )
     assert not any(
