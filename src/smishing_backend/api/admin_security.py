@@ -15,7 +15,12 @@ admin_bearer = HTTPBearer(scheme_name="AdministrativeBearer", auto_error=False)
 
 def management_error(status: int, headers: dict | None = None) -> JSONResponse:
     return JSONResponse(
-        {"error": {"code": "management_error", "message": "La operación no se pudo completar."}},
+        {
+            "error": {
+                "code": "management_error",
+                "message": "La operación no se pudo completar.",
+            }
+        },
         status_code=status,
         headers={"Cache-Control": "no-store"} | (headers or {}),
     )
@@ -24,11 +29,16 @@ def management_error(status: int, headers: dict | None = None) -> JSONResponse:
 class AdministrativeGate:
     def __init__(self, app: ASGIApp, credentials: dict):
         self.app = app
-        self.credentials = tuple((identity, value.get_secret_value().encode()) for identity, value in credentials.items())
+        self.credentials = tuple(
+            (identity, value.get_secret_value().encode())
+            for identity, value in credentials.items()
+        )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         path = scope.get("path", "")
-        if scope["type"] != "http" or not (path == ADMIN_PREFIX or path.startswith(ADMIN_PREFIX + "/")):
+        if scope["type"] != "http" or not (
+            path == ADMIN_PREFIX or path.startswith(ADMIN_PREFIX + "/")
+        ):
             await self.app(scope, receive, send)
             return
 
@@ -37,7 +47,9 @@ class AdministrativeGate:
                 MutableHeaders(scope=message)["Cache-Control"] = "no-store"
             await send(message)
 
-        credentials = [value for name, value in scope["headers"] if name == b"authorization"]
+        credentials = [
+            value for name, value in scope["headers"] if name == b"authorization"
+        ]
         identity = None
         if len(credentials) == 1:
             scheme, _, token = credentials[0].partition(b" ")
@@ -50,9 +62,13 @@ class AdministrativeGate:
                 failed: RateLimiter = scope["app"].state.failed_admin_limiter
                 retry = failed.admit("failed")
                 if retry is not None:
-                    await management_error(429, {"Retry-After": str(retry)})(scope, receive, private_send)
+                    await management_error(429, {"Retry-After": str(retry)})(
+                        scope, receive, private_send
+                    )
                     return
-            await management_error(401, {"WWW-Authenticate": "Bearer"})(scope, receive, private_send)
+            await management_error(401, {"WWW-Authenticate": "Bearer"})(
+                scope, receive, private_send
+            )
             return
         if scope["scheme"] != "https":
             await management_error(400)(scope, receive, private_send)
@@ -60,7 +76,9 @@ class AdministrativeGate:
         limiter: RateLimiter = scope["app"].state.admin_limiter
         retry = limiter.admit(identity)
         if retry is not None:
-            await management_error(429, {"Retry-After": str(retry)})(scope, receive, private_send)
+            await management_error(429, {"Retry-After": str(retry)})(
+                scope, receive, private_send
+            )
             return
 
         scope.setdefault("state", {})["administrative_actor"] = identity
