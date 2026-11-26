@@ -4,11 +4,11 @@ Estado al 23 de noviembre de 2026: el backend está desplegado a mano en un App 
 (`smishy-backend`, Brasil Sur, Linux, Python 3.12, publicación Code, plan Free F1) con
 HTTPS solo y TLS mínimo 1.2 configurados en el portal. **No hay base de datos en
 Azure:** por ahora la base es un PostgreSQL gratuito de Render, con acceso externo
-(ver [Riesgos](#riesgos-conocidos-con-el-plan-free-f1)). El despliegue no está
-automatizado todavía: el CD de [Despliegue automático](#despliegue-automático-67) existe
-pero no corre hasta completar su configuración. El procedimiento manual de abajo es
-el que se ejecutó y funcionó, y sigue siendo válido. Lo que sigue sin comprobar está
-marcado en la lista de verificación.
+(ver [Riesgos](#riesgos-conocidos-con-el-plan-free-f1)). Desde el 26-11-2026 el
+despliegue es automático: el CD de [Despliegue automático](#despliegue-automático-67)
+está activo y desplegó con éxito por primera vez. El procedimiento manual de abajo es
+el que se ejecutó antes y sigue siendo válido como respaldo. Lo que sigue sin
+comprobar está marcado en la lista de verificación.
 
 ## Qué cambia en el código
 
@@ -119,9 +119,16 @@ Ninguno de estos comandos lleva identificadores ni claves; no copiarlos al repos
    az identity federated-credential create --subscription "$SUB" -g smishy-rg \
      --identity-name smishy-backend-deploy --name github-production \
      --issuer https://token.actions.githubusercontent.com \
-     --subject repo:smishing-thesis/smishing-backend:environment:production \
+     --subject "$(gh api repos/smishing-thesis/smishing-backend/actions/oidc/customization/sub --jq .sub_claim_prefix):environment:production" \
      --audiences api://AzureADTokenExchange
    ```
+
+   **El subject lleva los ID inmutables del propietario y del repositorio**
+   (`repo:smishing-thesis@<id>/smishing-backend@<id>:environment:production`), no solo
+   los nombres. El comando de arriba lo lee de GitHub. Con el formato por nombre, Azure
+   responde `AADSTS700213` y el log de `azure/login` imprime el subject que GitHub sí
+   presentó (el primer intento del 26-11-2026 falló así). Es la opción más segura: un
+   repositorio recreado con el mismo nombre no heredaría el acceso.
 
 2. En GitHub, el environment `production` limitado a `main`:
 
@@ -165,9 +172,15 @@ Las migraciones no se revierten solas.
 
 ### Límites conocidos
 
-- **Un despliegue fallido deja la app detenida** (comportamiento de la CLI de Azure).
-  El job queda en rojo y no la arranca: revisar con `az webapp log download` y
-  redesplegar una versión buena.
+- **Un despliegue fallido puede dejar la app detenida** (comportamiento de la CLI de
+  Azure en el despliegue manual del 23-11-2026). El job queda en rojo y no la arranca:
+  revisar con `az webapp log download` y redesplegar una versión buena.
+- **El arranque en F1 puede superar los 10 minutos que espera `az webapp deploy`.**
+  Pasó el 26-11-2026 en un segundo despliegue lanzado unos 8 minutos después del
+  primero: el job falló con «the site failed to start within 10 mins» aunque la app
+  ya respondía `/health` con 200 poco después (99 s en esa solicitud). Es un falso
+  rojo, no un falso verde. Antes de redesplegar, comprobar `/health`; si responde,
+  volver a ejecutar el job. Evitar varios despliegues seguidos.
 - **Cada merge reinicia producción.** En el plan F1 son 60 minutos de CPU al día y cada
   arranque tarda de 78 a 207 s, así que varios merges seguidos gastan cuota.
 - **Las migraciones avanzan antes que el código.** Deben ser compatibles hacia atrás:
@@ -177,9 +190,20 @@ Las migraciones no se revierten solas.
   privada, el paso de migraciones fallará y habrá que moverlo.
 - **El registro del modelo** (`python -m smishing_backend.catalog --release`) sigue
   siendo manual: solo se hace al publicar una versión nueva del modelo.
-- La prueba real del primer despliegue automático, del regreso a una versión anterior y
-  de que la identidad no despliega desde otra rama **no se ha ejecutado**: depende de
-  la configuración anterior (#67).
+- Comprobado el 26-11-2026 (#67): el primer despliegue automático (login OIDC,
+  migraciones a `0006 (head)`, despliegue y `/health` 200 al primer intento) y que la
+  app desplegada publica las rutas `/api/v1/admin/...`, responde 401 sin credencial y
+  redirige `http://` con 301. El log no mostró el host ni la URL de la base.
+- El regreso a una versión anterior (`ref` con un commit ya fusionado en `main`) pasó
+  checkout, login, migraciones y subida del paquete, pero **el paso de despliegue
+  terminó en rojo por el tiempo de arranque** descrito arriba; no se pudo confirmar
+  qué paquete quedó activo (SCM no admite autenticación básica). Los dos commits solo
+  diferían en workflow y documentación.
+- Un disparo manual desde otra rama se omite (comprobado el 26-11-2026): el job solo
+  corre con `github.ref == refs/heads/main`. **No se ha probado** que Azure rechace un
+  job de otra rama que saltara esa condición: eso se apoya en que el environment
+  `production` solo acepta `main` (comprobado por configuración) y en que la credencial
+  solo acepta ese environment.
 
 ## Procedimiento (ejecutado a mano el 23-11-2026)
 
