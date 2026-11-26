@@ -63,6 +63,7 @@ def test_final_corpus_http_and_real_model_reader(client, pg, tmp_path):
     assert first.headers["cache-control"] == "no-store"
     assert first.headers["x-corpus-rows"] == "2"
     assert first.headers["x-corpus-excluded"] == "2"
+    assert first.headers["x-corpus-excluded-unreviewed"] == "1"
     version = first.headers["x-corpus-version"]
     date = first.headers["x-corpus-date"]
     assert (
@@ -100,3 +101,19 @@ def test_empty_final_corpus(client):
     response = client.get(CSV, headers=ADMIN)
     assert response.status_code == 200 and response.headers["x-corpus-rows"] == "0"
     assert response.content == b"text,label,label_origin,model_version,corpus_version\n"
+
+
+def test_corpus_limit_does_not_download_an_incomplete_file(client, monkeypatch):
+    from smishing_backend.api import corpus
+
+    monkeypatch.setattr(corpus, "MAX_CORPUS_ROWS", 1)
+    for text in ("Aporte sintético alfa <URL>", "Aporte sintético beta <URL>"):
+        identity = contribute(client, text)
+        assert (
+            client.patch(f"{PATH}/{identity}/review", headers=ADMIN, json=DECISION)
+            .status_code
+            == 200
+        )
+    response = client.get(CSV, headers=ADMIN)
+    assert response.status_code == 413
+    assert "content-disposition" not in response.headers

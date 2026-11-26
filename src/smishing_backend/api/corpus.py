@@ -22,7 +22,9 @@ router = APIRouter(prefix="/corpus", tags=["Corpus final"], route_class=Manageme
     },
 )
 def download(request: Request):
-    rows, excluded = request.app.state.corpus.reviewed_for_training(MAX_CORPUS_ROWS)
+    rows, excluded, unreviewed = request.app.state.corpus.reviewed_for_training(
+        MAX_CORPUS_ROWS
+    )
     if len(rows) > MAX_CORPUS_ROWS:
         raise ManagementError(413)
     try:
@@ -39,5 +41,6 @@ def download(request: Request):
             "X-Corpus-Version": artifact.version,
             "X-Corpus-Rows": str(artifact.count),
             "X-Corpus-Excluded": str(excluded),
+            "X-Corpus-Excluded-Unreviewed": str(unreviewed),
         },
     )

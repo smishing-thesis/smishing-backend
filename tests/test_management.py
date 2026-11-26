@@ -232,3 +232,42 @@ def test_database_failure_rolls_back_review(client, pg):
         and rows[0]["status"] == "pending"
         and rows[0]["source"] == "device"
     )
+
+
+def test_label_source_and_model_version_select_different_rows(
+    client, pg, published_metadata
+):
+    from dataclasses import replace
+
+    from smishing_backend.data.model_release import parse_publication
+    from smishing_backend.data.repositories.model_catalog import PostgresModelCatalog
+
+    publication = parse_publication(*published_metadata)
+    PostgresModelCatalog(pg).register(replace(publication, version="2.0.0"))
+    manual = contribute(client, "Aporte sintético con revisión <URL>")
+    response = client.post(
+        "/api/v1/contributions",
+        headers=MOBILE,
+        json={
+            "text": "Otro aporte sintético con modelo distinto <URL>",
+            "label": "safe",
+            "model_version": "2.0.0",
+        },
+    )
+    assert response.status_code == 201
+    device = response.json()["id"]
+    assert (
+        client.patch(f"{PATH}/{manual}/review", headers=ADMIN, json=DECISION)
+        .status_code
+        == 200
+    )
+    for query, expected in [
+        ({"source": "device"}, [device]),
+        ({"source": "manual"}, [manual]),
+        ({"model_version": "2.0.0"}, [device]),
+        ({"model_version": "1.0.0"}, [manual]),
+        ({"model_version": "9.9.9"}, []),
+    ]:
+        listed = client.get(PATH, params=query, headers=ADMIN)
+        assert listed.status_code == 200
+        assert [row["id"] for row in listed.json()] == expected

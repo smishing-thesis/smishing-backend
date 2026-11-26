@@ -73,7 +73,7 @@ class PostgresQuarantineRepository:
         with self.engine.connect() as connection:
             return [dict(row) for row in connection.execute(statement).mappings()]
 
-    def reviewed_for_training(self, limit: int) -> tuple[list[dict], int]:
+    def reviewed_for_training(self, limit: int) -> tuple[list[dict], int, int]:
         automatic = automatic_label()
         manual = labels.alias("reviewed_label")
         unresolved = exists(
@@ -118,5 +118,20 @@ class PostgresQuarantineRepository:
             included = connection.scalar(
                 select(func.count()).select_from(eligible.subquery())
             )
+            has_registered_review = exists(
+                select(reviews.c.id).where(
+                    reviews.c.contribution_id == contributions.c.id,
+                    reviews.c.decision == "accepted",
+                )
+            )
+            unreviewed = connection.scalar(
+                select(func.count())
+                .select_from(contributions)
+                .where(are_accepted, ~has_registered_review)
+            )
             rows = connection.execute(eligible.limit(limit + 1)).mappings()
-            return [dict(row) for row in rows], (accepted or 0) - (included or 0)
+            return (
+                [dict(row) for row in rows],
+                (accepted or 0) - (included or 0),
+                unreviewed or 0,
+            )

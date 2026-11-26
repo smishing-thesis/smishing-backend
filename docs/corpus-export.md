@@ -91,7 +91,7 @@ de origen válida y ausencia de alertas sin revisar. Ausencia de registros
 elegibles produce un CSV con solo cabecera. `X-Corpus-Excluded` cuenta aportes
 accepted que no son elegibles, incluidos los históricos sin revisión manual
 atribuida y los que tienen alertas pendientes. Pending y rejected nunca se
-exportan ni forman parte de ese conteo.
+exportan ni forman parte de ese conteo. `X-Corpus-Excluded-Unreviewed` informa aparte cuántos de los excluidos carecen de una revisión aceptada y atribuida.
 
 La respuesta informa `X-Corpus-Rows`, `X-Corpus-Version` y `X-Corpus-Date`.
 El nombre es `corpus-AAAA-MM-DD-backend-<huella>.csv`. La fecha es UTC y queda
@@ -113,3 +113,5 @@ modelo y conserva el texto tal cual.
 Para el video, revisa dos aportes sintéticos con etiquetas finales distintas,
 deja uno pendiente y rechaza otro. Descarga desde Swagger dos veces. Muestra
 el conteo, nombre, fechas y huella, y que el lector fijado carga ambas clases.
+
+[Ensayo HTTPS e interfaz Swagger en Chromium](https://github.com/smishing-thesis/smishing-backend/actions/runs/45766490819): dos filas revisadas, huella y bytes iguales en dos descargas y verificación de la versión del modelo. Datos sintéticos en PostgreSQL 17. Verificación Azure pendiente.
