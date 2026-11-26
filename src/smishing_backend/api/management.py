@@ -58,9 +58,7 @@ management_router = APIRouter(
     route_class=ManagementRoute,
     dependencies=[Depends(admin_bearer)],
 )
-router = APIRouter(
-    tags=["Administración de aportes"], route_class=ManagementRoute
-)
+router = APIRouter(tags=["Administración de aportes"], route_class=ManagementRoute)
 
 
 class FilterQuery(BaseModel):
