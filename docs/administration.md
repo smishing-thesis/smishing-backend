@@ -138,3 +138,34 @@ Uvicorn y certificado efímero verificado ejecuta POST/GET/PATCH/DELETE sobre HT
 Los metadatos externos se sustituyen por fixtures sintéticos en CI para no
 necesitar credenciales GitHub ni descargar corpus. El lector de publicaciones
 real se mantiene como el ya probado por el catálogo.
+
+## Revisar aportes en Excel — #55
+
+En «Excel de revisión» del Swagger principal, usa
+`GET /api/v1/admin/exports/contributions.xlsx` para descargar una página con
+los mismos filtros y orden del listado. `limit` permite hasta 500 filas y
+`offset` permite continuar. Usa `POST /api/v1/admin/exports/reviews.xlsx`
+con un único archivo multipart en el campo `file` para aplicar las revisiones.
+
+La hoja «Aportes» contiene UUID, fecha de recepción, estado, texto, huella,
+etiqueta automática, versión del modelo y señales vigentes. Edita solo
+`decision`, `label`, `reason` y `acknowledge_flags`. En la hoja
+«Instrucciones» están los valores válidos. Una fila con alertas requiere
+`true`. El importador no escribe el texto del archivo. Verifica UUID, huella
+y versión bajo el bloqueo de la transacción de revisión. Una fila sin
+decisión o con una revisión previa es `skipped`; otra inválida es `rejected`.
+Las válidas son `applied`; la respuesta contiene solo número de fila y motivo
+genérico. Reimportar una hoja aplicada conserva las revisiones originales.
+
+Límites iniciales: 500 filas, 512 KiB por archivo, 528 KiB en multipart,
+128 entradas ZIP y 8 MiB de tamaño descomprimido. Si la exportación excede
+el tamaño del archivo, reduce `limit`. No se procesan formatos con macros,
+vínculos externos ni celdas de fórmula como datos. Las cadenas que empiezan con
+`=`, `+`, `-` o `@` se exportan como texto literal. La carga y descarga se
+mantienen en memoria y usan los mismos controles HTTPS, Bearer y no-store.
+
+Para el video, crea aportes sintéticos pendientes, descarga con
+`status=pending`, rellena una fila con `accepted`, `smishing` y
+`quality_checked`, y súbela por Swagger. Repite la carga para mostrar
+`skipped`. No grabes el valor del Bearer. El build de Azure debe instalar el
+`requirements.txt` actualizado antes de publicar estas rutas.

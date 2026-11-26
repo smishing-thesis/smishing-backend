@@ -4,7 +4,7 @@ from typing import Literal, Protocol
 from uuid import UUID
 
 from smishing_backend.domain.entity import Entity
-from smishing_backend.domain.quarantine import Decision, Reason
+from smishing_backend.domain.quarantine import Decision, InvalidTransition, Reason
 
 
 @dataclass(frozen=True)
@@ -31,3 +31,13 @@ class ReviewRepository(Protocol):
     ) -> RegisteredReview: ...
     def flagged(self, limit: int) -> list[dict]: ...
     def acknowledge(self, contribution_id: UUID, reviewer_id: str) -> int: ...
+
+
+@dataclass(frozen=True)
+class ReviewExpectation:
+    content_hash: str
+    model_version: str
+
+
+class ReviewAlreadyRecorded(InvalidTransition):
+    pass
